@@ -12,12 +12,17 @@ from fastapi.staticfiles import StaticFiles
 
 from .asset_scanner import AUDIO_EXTENSIONS, IMAGE_EXTENSIONS, scan_assets
 from .git_status import read_git_status
+from .hotspot_checker import build_label_templates, check_hotspots
 from .hotspot_manager import load_hotspots, save_hotspots
+from .label_scanner import scan_labels
 from .models import (
     AssetScanResult,
     ExportResult,
     GitStatus,
+    HotspotCheckResult,
     HotspotDocument,
+    LabelInfo,
+    LabelTemplateResult,
     ProjectOpenRequest,
     ProjectSummary,
     normalize_project_path,
@@ -135,6 +140,27 @@ def post_hotspots_save(document: HotspotDocument) -> HotspotDocument:
         return save_hotspots(project_path, document)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/labels", response_model=list[LabelInfo])
+def get_labels() -> list[LabelInfo]:
+    """Return Ren'Py labels found in game/**/*.rpy for the current project."""
+
+    return scan_labels(_require_project_path())
+
+
+@app.get("/api/hotspots/check", response_model=HotspotCheckResult)
+def get_hotspot_check() -> HotspotCheckResult:
+    """Check hotspot target_label values against scanned Ren'Py labels."""
+
+    return check_hotspots(_require_project_path())
+
+
+@app.get("/api/hotspots/label-templates", response_model=LabelTemplateResult)
+def get_hotspot_label_templates() -> LabelTemplateResult:
+    """Return suggested Ren'Py label templates for missing/empty/invalid targets."""
+
+    return build_label_templates(_require_project_path())
 
 
 @app.post("/api/export/hotspots", response_model=ExportResult)

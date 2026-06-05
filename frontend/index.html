@@ -16,6 +16,7 @@
       <input id="project-path" type="text" value="D:\GitHub\DemoAVG" placeholder="D:\GitHub\DemoAVG" required />
       <button id="scan-button" type="submit">扫描</button>
       <button id="save-hotspots-button" type="button" disabled>保存 hotspots.json</button>
+      <button id="check-hotspots-button" type="button" disabled>检查 target_label</button>
       <button id="export-hotspots-button" type="button" disabled>导出 Ren'Py 热区</button>
     </form>
     <div class="top-status">
@@ -93,6 +94,16 @@
       <p class="hint">空白处拖拽新建；拖动矩形移动；拖右下角控制点缩放；Ctrl+Z/Y 撤销/重做；Ctrl+滚轮或 Ctrl+±/0 缩放；Delete 删除；Ctrl+D 复制。</p>
     </aside>
   </main>
+
+  <section class="check-card card">
+    <div class="check-header">
+      <h2>热区生产检查</h2>
+      <span id="check-summary" class="pill">尚未检查</span>
+    </div>
+    <div id="check-list" class="check-list empty">点击“检查 target_label”查看死链、空 label 和命名建议。</div>
+    <h3>测试 label 模板预览</h3>
+    <pre id="template-preview" class="template-preview">暂无模板。</pre>
+  </section>
 
   <section class="log-card card">
     <h2>日志</h2>

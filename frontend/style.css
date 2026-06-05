@@ -265,3 +265,16 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 #hotspot-layer { width: 100%; height: 100%; }
 .hotspot-box.flash { animation: hotspot-flash 0.55s ease-out; }
 @keyframes hotspot-flash { 0% { box-shadow: 0 0 0 5px rgba(53,208,255,.55); } 100% { box-shadow: 0 0 0 2px rgba(53,208,255,.25); } }
+
+/* V0.4 production check panel */
+.check-card { margin: 18px 22px 0; padding: 18px; }
+.check-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.check-list { display: grid; gap: 8px; margin: 12px 0 16px; }
+.check-item { display: grid; gap: 3px; padding: 10px 12px; border: 1px solid var(--line); border-left-width: 6px; border-radius: 12px; background: #fbfcff; }
+.check-item span, .check-item small { color: var(--muted); }
+.check-item.ok { border-left-color: #168a45; }
+.check-item.missing { border-left-color: #c03434; }
+.check-item.empty { border-left-color: #b46a00; }
+.check-item.invalid { border-left-color: #7c3aed; }
+.check-item.disabled { border-left-color: #94a3b8; opacity: .75; }
+.template-preview { min-height: 110px; margin: 0; padding: 14px; overflow: auto; border-radius: 14px; background: #0f172a; color: #d6e2ff; font-size: .9rem; line-height: 1.55; white-space: pre-wrap; }

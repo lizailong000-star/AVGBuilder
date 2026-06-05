@@ -50,6 +50,12 @@ AVG Builder 是一个本地 HTTP 工具，用于只读扫描本地 Ren'Py 项目
   - `target_label` 非空时使用 `Jump("target_label")`，为空时使用 `NullAction()`
   - tooltip 以注释形式输出
   - 不自动 include，不修改任何现有 `.rpy` 文件
+- V0.4 热区生产规范检查：
+  - `GET /api/labels` 扫描 `game/**/*.rpy` 中的 Ren'Py label
+  - `GET /api/hotspots/check` 检查 `target_label` 是否 ok/missing/empty/disabled/invalid
+  - `GET /api/hotspots/label-templates` 为问题热区生成测试 label 模板
+  - 导出前先调用检查接口并在页面显示 warning
+  - 只读检查，不保存、不导出、不修改 DemoAVG
 
 ## 项目结构
 

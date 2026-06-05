@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -101,6 +101,66 @@ class ExportResult(BaseModel):
     hotspot_count: int = 0
     skipped_count: int = 0
     message: str = ""
+
+
+class LabelInfo(BaseModel):
+    """A Ren'Py label found in game/**/*.rpy."""
+
+    name: str
+    file: str
+    line: int
+
+
+HotspotCheckStatus = Literal["ok", "missing", "empty", "disabled", "invalid"]
+
+
+class HotspotCheckItem(BaseModel):
+    """Per-hotspot production check result."""
+
+    scene_id: str
+    background: str
+    hotspot_id: str
+    hotspot_name: str
+    target_label: str
+    enabled: bool
+    status: HotspotCheckStatus
+    suggested_label: str
+    message: str
+
+
+class HotspotCheckSummary(BaseModel):
+    """Aggregate hotspot check counts."""
+
+    total: int = 0
+    ok: int = 0
+    missing: int = 0
+    empty: int = 0
+    disabled: int = 0
+    invalid: int = 0
+
+
+class HotspotCheckResult(BaseModel):
+    """Full hotspot production check result."""
+
+    ok: bool
+    summary: HotspotCheckSummary
+    items: List[HotspotCheckItem] = Field(default_factory=list)
+
+
+class LabelTemplateItem(BaseModel):
+    """Suggested Ren'Py label template for a hotspot."""
+
+    scene_id: str
+    hotspot_id: str
+    suggested_label: str
+    template: str
+
+
+class LabelTemplateResult(BaseModel):
+    """Collection of suggested label templates."""
+
+    count: int = 0
+    templates: List[LabelTemplateItem] = Field(default_factory=list)
 
 
 def normalize_project_path(raw_path: str) -> Path:
