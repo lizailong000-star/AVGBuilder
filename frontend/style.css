@@ -768,3 +768,11 @@ button:disabled { opacity: .42; box-shadow: none; }
 .asset-subline span { font-size: 9px; padding: 3px 6px; }
 .asset-subline em { font-size: 10px; }
 .asset-row.asset-card::after { font-size: 18px; }
+
+/* Hotspot asset list layout fix: thumbnail left, info right */
+.asset-row.asset-card { grid-template-columns: 48px minmax(0, 1fr) !important; grid-template-rows: auto !important; align-items: center; min-height: 0; height: auto; }
+.asset-row.asset-card::after { content: none !important; }
+.asset-row.asset-card .asset-thumb { grid-column: 1; grid-row: 1; }
+.asset-row.asset-card .asset-meta { grid-column: 2; grid-row: 1; min-width: 0; padding-right: 0; align-self: center; }
+.asset-row.asset-card .asset-meta strong,
+.asset-row.asset-card .asset-meta small { display: block; max-width: 100%; }
