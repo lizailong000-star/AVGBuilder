@@ -1,6 +1,6 @@
-# AVG Builder V0.1b
+# AVG Builder V0.2a
 
-AVG Builder 是一个本地 HTTP 工具，用于只读扫描本地 Ren'Py 项目结构、资源列表与 Git 状态，并在 V0.1b 中支持背景预览与手填热区 JSON 编辑。
+AVG Builder 是一个本地 HTTP 工具，用于只读扫描本地 Ren'Py 项目结构、资源列表与 Git 状态，并支持背景预览、可视化矩形热区编辑与基础编辑工作流优化。V0.2a 增加撤销/重做、画布缩放、热区层级调整、复制自动偏移、选中定位和保存状态提示。
 
 安全边界：V0.1b 保存热区时，只允许写入被管理项目的 `tools_data/hotspots.json`。它不会修改 `game/script.rpy`、`game/gui.rpy`、`game/options.rpy`，也不会修改 `game/images`、`game/gui`、`game/audio`，不会自动提交或推送被管理游戏项目。
 
@@ -27,10 +27,19 @@ AVG Builder 是一个本地 HTTP 工具，用于只读扫描本地 Ren'Py 项目
   - 工作区是否 clean
   - `git status --short`
   - 最新 commit
-- V0.1b 热区功能：
+- V0.1c/V0.2a 热区功能：
   - 点击背景资源后预览背景图
-  - 手填热区 `id/name/target_label/tooltip/x/y/w/h/enabled`
-  - 按背景组织场景热区
+  - 在背景画布上拖拽绘制矩形热区
+  - 点击热区选中，拖动内部移动，拖动右下角控制点缩放
+  - 右侧表单与画布坐标双向同步
+  - 坐标保存为原始背景图坐标，页面缩放只影响显示
+  - Ctrl+Z 撤销，Ctrl+Y / Ctrl+Shift+Z 重做
+  - 缩放按钮：25/50/75/100/125/150/200
+  - Ctrl+鼠标滚轮、Ctrl+Plus、Ctrl+Minus、Ctrl+0 缩放
+  - Ctrl+D 复制热区并自动偏移 20,20，ID 自动去重
+  - 热区上移/下移调整层级
+  - Delete 删除，Esc 取消选中
+  - 保存状态显示 Saved / Unsaved / Saving / Save failed
   - 保存 `tools_data/hotspots.json`
 
 ## 项目结构

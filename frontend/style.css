@@ -248,3 +248,20 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .inspector,
   .canvas-panel { min-height: auto; max-height: none; }
 }
+
+/* V0.2a workflow controls */
+.top-status { display: grid; gap: 8px; min-width: 0; }
+.save-status { display: inline-flex; align-items: center; justify-content: center; min-height: 30px; border-radius: 999px; padding: 5px 12px; font-size: 0.82rem; font-weight: 900; }
+.save-status.saved { background: #e8f7ee; color: #168a45; }
+.save-status.unsaved { background: #fff3df; color: #9a5a00; }
+.save-status.saving { background: #edf0ff; color: #4d3fc1; }
+.save-status.failed { background: #ffebeb; color: #c03434; }
+.tool-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.tool-row button { padding: 7px 10px; border: 1px solid var(--line); background: #f9fbff; color: var(--text); }
+.tool-row button:hover:not(:disabled), .zoom-button.active { background: var(--accent); color: white; border-color: transparent; }
+.tool-separator { width: 1px; height: 28px; background: var(--line); }
+.canvas-scroll { max-width: 100%; max-height: calc(100vh - 260px); overflow: auto; border-radius: 16px; background: #111827; }
+.canvas-wrap { position: relative; display: inline-block; overflow: visible; border-radius: 0; background: #111827; user-select: none; touch-action: none; }
+#hotspot-layer { width: 100%; height: 100%; }
+.hotspot-box.flash { animation: hotspot-flash 0.55s ease-out; }
+@keyframes hotspot-flash { 0% { box-shadow: 0 0 0 5px rgba(53,208,255,.55); } 100% { box-shadow: 0 0 0 2px rgba(53,208,255,.25); } }

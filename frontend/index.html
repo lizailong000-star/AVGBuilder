@@ -3,21 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AVG Builder V0.1c</title>
+  <title>AVG Builder V0.2a</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <span class="eyebrow">AVG Builder V0.1c</span>
-      <strong>可视化矩形热区编辑</strong>
+      <span class="eyebrow">AVG Builder V0.2a</span>
+      <strong>可视化热区工作流优化</strong>
     </div>
     <form id="scan-form" class="top-form">
       <input id="project-path" type="text" value="D:\GitHub\DemoAVG" placeholder="D:\GitHub\DemoAVG" required />
       <button id="scan-button" type="submit">扫描</button>
       <button id="save-hotspots-button" type="button" disabled>保存 hotspots.json</button>
     </form>
-    <div id="git-chip" class="chip">Git：未扫描</div>
+    <div class="top-status">
+      <div id="save-status" class="save-status saved">Saved</div>
+      <div id="git-chip" class="chip">Git：未扫描</div>
+    </div>
   </header>
 
   <main class="app-shell">
@@ -40,10 +43,24 @@
           <span id="canvas-scale">缩放：-</span>
         </div>
       </div>
+      <div class="tool-row">
+        <button id="undo-button" type="button" disabled>撤销 Ctrl+Z</button>
+        <button id="redo-button" type="button" disabled>重做 Ctrl+Y</button>
+        <span class="tool-separator"></span>
+        <button class="zoom-button" type="button" data-zoom="0.25">25%</button>
+        <button class="zoom-button" type="button" data-zoom="0.5">50%</button>
+        <button class="zoom-button" type="button" data-zoom="0.75">75%</button>
+        <button class="zoom-button active" type="button" data-zoom="1">100%</button>
+        <button class="zoom-button" type="button" data-zoom="1.25">125%</button>
+        <button class="zoom-button" type="button" data-zoom="1.5">150%</button>
+        <button class="zoom-button" type="button" data-zoom="2">200%</button>
+      </div>
       <div id="canvas-empty" class="canvas-empty">点击左侧背景资源开始编辑。</div>
-      <div id="canvas-wrap" class="canvas-wrap hidden">
-        <img id="background-preview" alt="背景预览" draggable="false" />
-        <div id="hotspot-layer"></div>
+      <div id="canvas-scroll" class="canvas-scroll hidden">
+        <div id="canvas-wrap" class="canvas-wrap">
+          <img id="background-preview" alt="背景预览" draggable="false" />
+          <div id="hotspot-layer"></div>
+        </div>
       </div>
     </section>
 
@@ -65,11 +82,13 @@
         <label class="checkbox-label"><input id="hotspot-enabled" type="checkbox" checked /> enabled</label>
         <div class="button-row">
           <button id="apply-hotspot-button" type="submit" disabled>应用表单</button>
+          <button id="move-up-button" type="button" disabled>上移</button>
+          <button id="move-down-button" type="button" disabled>下移</button>
           <button id="delete-hotspot-button" type="button" disabled>删除</button>
           <button id="duplicate-hotspot-button" type="button" disabled>复制</button>
         </div>
       </form>
-      <p class="hint">空白处拖拽新建；拖动矩形移动；拖右下角控制点缩放；Delete 删除；Esc 取消；Ctrl+D 复制。</p>
+      <p class="hint">空白处拖拽新建；拖动矩形移动；拖右下角控制点缩放；Ctrl+Z/Y 撤销/重做；Ctrl+滚轮或 Ctrl+±/0 缩放；Delete 删除；Ctrl+D 复制。</p>
     </aside>
   </main>
 
