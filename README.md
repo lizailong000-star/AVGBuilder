@@ -71,6 +71,7 @@ AVG Builder 是一个本地 HTTP 工具，用于只读扫描本地 Ren'Py 项目
   - `GET /api/labels/detail?name=xxx` 返回单个 label 的入边、出边、关联热区
   - `GET /api/labels/health` 返回 label 健康摘要
   - Label / Nodes 页面提供分类筛选、搜索、关系列表、死链列表、未使用列表和详情面板
+  - V0.6.1 增加 SVG Label 图谱：节点、jump/call 连线、missing/dynamic/unused 状态、点击节点查看详情、搜索/分类同步过滤、缩放/适配、拖动画布平移
   - 只读扫描 `.rpy` 与 `tools_data/hotspots.json`，不修改 DemoAVG
 
 ## 项目结构

@@ -189,7 +189,7 @@
         <div class="label-toolbar card-lite">
           <button id="load-label-graph-button" type="button">加载 Label 图谱</button>
           <input id="label-search" type="search" placeholder="搜索 label 名称" />
-          <div id="label-category-filters" class="label-category-filters">
+          <div id="label-filter" class="label-category-filters">
             <button class="label-filter active" type="button" data-label-filter="all">全部</button>
             <button class="label-filter" type="button" data-label-filter="story">正式剧情</button>
             <button class="label-filter" type="button" data-label-filter="test">测试</button>
@@ -200,7 +200,15 @@
         </div>
         <div class="label-manager-layout">
           <aside class="label-list-panel card-lite"><h2>Label 列表</h2><div id="label-list" class="label-list empty">暂无数据。</div></aside>
-          <section class="label-graph-panel card-lite"><h2>Jump / Call 关系</h2><div id="label-edge-list" class="label-edge-list empty">暂无跳转关系。</div><h2>死链</h2><div id="label-missing-list" class="label-issue-list empty">暂无数据。</div><h2>可能未使用</h2><div id="label-unused-list" class="label-issue-list empty">暂无数据。</div></section>
+          <section id="label-graph-panel" class="label-graph-panel card-lite">
+            <div class="graph-toolbar"><h2>Label 图谱</h2><div><button id="label-graph-fit" type="button">适配</button><button id="label-graph-zoom-in" type="button">+</button><button id="label-graph-zoom-out" type="button">-</button></div></div>
+            <div id="label-graph-canvas" class="label-graph-canvas"><svg id="label-graph-svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
+          </section>
+        </div>
+        <div class="label-bottom-panels">
+          <section class="card-lite"><h2>Jump / Call 关系</h2><div id="label-edge-list" class="label-edge-list empty">暂无跳转关系。</div></section>
+          <section class="card-lite"><h2>死链</h2><div id="label-missing-list" class="label-issue-list empty">暂无数据。</div></section>
+          <section class="card-lite"><h2>可能未使用</h2><div id="label-unused-list" class="label-issue-list empty">暂无数据。</div></section>
         </div>
       </section>
       <section class="page module-page" data-page="dialogue">
@@ -293,7 +301,7 @@
         <div class="inspector-note">只读检查：不移动、不删除、不重命名、不自动修复资源。</div>
       </section>
 
-      <section class="inspector-block hidden" data-inspector="labels">
+      <section id="label-inspector" class="inspector-block hidden" data-inspector="labels">
         <h2>Label 详情</h2>
         <div id="label-detail" class="label-detail empty">点击 label 查看详情。</div>
       </section>
