@@ -30,6 +30,8 @@
         <button class="primary-nav-item" type="button" data-route="export-build"><span>⇪</span>Export / Build</button>
         <button class="primary-nav-item" type="button" data-route="labels"><span>◇</span>Label / Nodes</button>
         <button class="primary-nav-item" type="button" data-route="dialogue"><span>☰</span>Dialogue</button>
+        <button class="primary-nav-item" type="button" data-route="ui-config"><span>◈</span>UI / Config</button>
+        <button class="primary-nav-item" type="button" data-route="audio"><span>♪</span>Audio</button>
         <button class="primary-nav-item" type="button" data-route="ai-assistant"><span>✦</span>AI Assistant</button>
         <button class="primary-nav-item" type="button" data-route="settings-logs"><span>⚙</span>Settings / Logs</button>
       </nav>
@@ -158,11 +160,34 @@
         </div>
       </section>
 
-      <section class="page placeholder-page" data-page="labels"><span class="panel-kicker">LABELS V0.6</span><h1>Label / 剧情节点管理器</h1><div class="placeholder-grid"><div>Label 列表</div><div>Jump / Call 关系图</div><div>死链检查</div><div>文件与行号定位</div></div></section>
-      <section class="page placeholder-page" data-page="dialogue"><span class="panel-kicker">DIALOGUE V0.7</span><h1>对话编辑器</h1><div class="placeholder-grid"><div>剧情块列表</div><div>对白行编辑</div><div>角色 / 背景 / BGM</div><div>Ren’Py 代码预览</div></div></section>
-      <section class="page placeholder-page" data-page="ui-config"><span class="panel-kicker">UI CONFIG V0.8</span><h1>UI / 配置健康检查</h1><div class="placeholder-grid"><div>配置文件状态</div><div>字体检查</div><div>screens/gui/options</div><div>Ren’Py lint warnings</div></div></section>
-      <section class="page placeholder-page" data-page="audio"><span class="panel-kicker">AUDIO V0.9</span><h1>声音管理器</h1><div class="placeholder-grid"><div>BGM</div><div>SFX</div><div>Ambience</div><div>Voice</div></div></section>
-      <section class="page placeholder-page" data-page="ai-assistant"><span class="panel-kicker">AI ASSISTANT V1.1+</span><h1>AI 助手</h1><div class="placeholder-grid"><div>任务类型</div><div>上下文选择</div><div>输入区</div><div>输出区</div></div></section>
+      <section class="page module-page" data-page="labels">
+        <div class="page-header compact"><div><span class="panel-kicker">LABEL / NODES</span><h1>Label / 剧情节点</h1><p>可视化 Ren’Py label、jump/call 关系、死链和未使用节点。</p></div><span class="page-chip">V0.6 planned</span></div>
+        <div class="module-board labels-board">
+          <aside class="module-rail card-lite"><h2>Label 列表</h2><div class="module-search">Search label...</div><div class="module-list-row active">start · script.rpy:12</div><div class="module-list-row">scene_lobby · chapter_02.rpy</div><div class="module-list-row">test_hotspot_* · generated</div></aside>
+          <section class="module-center card-lite"><h2>Jump / Call 关系</h2><div class="node-canvas"><span>start</span><i></i><span>scene_lobby</span><i></i><span>hotspot_event</span></div></section>
+          <section class="module-detail card-lite"><h2>节点详情</h2><div class="detail-row">来源文件 <strong>待扫描</strong></div><div class="detail-row">入边 / 出边 <strong>- / -</strong></div><div class="detail-row">状态 <strong>预留</strong></div></section>
+        </div>
+      </section>
+      <section class="page module-page" data-page="dialogue">
+        <div class="page-header compact"><div><span class="panel-kicker">DIALOGUE</span><h1>对话编辑</h1><p>网页化编辑 AVG 剧情对白块，并预览 Ren’Py 输出。</p></div><span class="page-chip">V0.7 planned</span></div>
+        <div class="module-board dialogue-board">
+          <aside class="module-rail card-lite"><h2>剧情块</h2><div class="module-list-row active">opening_rain_room</div><div class="module-list-row">nursing_home_gate</div><div class="module-list-row">phone_call</div></aside>
+          <section class="module-center card-lite"><h2>对白编辑区</h2><div class="dialogue-line"><b>周：</b><span>这里先作为对白行编辑槽位。</span></div><div class="dialogue-line narrator"><b>旁白：</b><span>未来支持角色、表情、背景、BGM。</span></div></section>
+          <section class="module-detail card-lite"><h2>Ren’Py 代码预览</h2><pre class="mini-code">label sample:\n    scene bg_room\n    zhou "..."</pre></section>
+        </div>
+      </section>
+      <section class="page module-page" data-page="ui-config">
+        <div class="page-header compact"><div><span class="panel-kicker">UI CONFIG</span><h1>UI / 配置检查</h1><p>检查 gui、screens、options、字体、UI 资源和配置冲突。</p></div><span class="page-chip">V0.8 planned</span></div>
+        <div class="module-card-grid"><div class="module-card"><h2>配置文件状态</h2><p>gui.rpy / screens.rpy / options.rpy</p></div><div class="module-card"><h2>字体检查</h2><p>字体路径、缺失字体、默认字体。</p></div><div class="module-card"><h2>UI 资源检查</h2><p>头像框、对话框、按钮、窗口素材。</p></div><div class="module-card"><h2>Lint Warning</h2><p>Ren’Py lint 输出和建议修复槽位。</p></div></div>
+      </section>
+      <section class="page module-page" data-page="audio">
+        <div class="page-header compact"><div><span class="panel-kicker">AUDIO</span><h1>声音管理</h1><p>管理 BGM、SFX、环境声、语音资源和引用状态。</p></div><span class="page-chip">V0.9 planned</span></div>
+        <div class="module-board audio-board"><aside class="module-rail card-lite"><h2>分类</h2><div class="module-list-row active">BGM</div><div class="module-list-row">SFX</div><div class="module-list-row">Ambience</div><div class="module-list-row">Voice</div></aside><section class="module-center card-lite"><h2>音频列表</h2><div class="table-skeleton"><div>文件</div><div>引用状态</div><div>大小</div><div>代码片段</div></div></section><section class="module-detail card-lite"><h2>音频详情</h2><p class="muted">播放预览、引用位置、缺失音频和未使用音频。</p></section></div>
+      </section>
+      <section class="page module-page" data-page="ai-assistant">
+        <div class="page-header compact"><div><span class="panel-kicker">AI ASSISTANT</span><h1>AI 助手</h1><p>文本生成、Prompt 生成、剧情建议、资源描述生成。</p></div><span class="page-chip">V1.1+ planned</span></div>
+        <div class="module-board ai-board"><aside class="module-rail card-lite"><h2>任务类型</h2><div class="module-list-row active">剧情建议</div><div class="module-list-row">Prompt 生成</div><div class="module-list-row">资源描述</div></aside><section class="module-center card-lite"><h2>输入 / 输出</h2><div class="ai-input-box">选择上下文后输入任务需求...</div><div class="ai-output-box">结构化输出 JSON 预览...</div></section><section class="module-detail card-lite"><h2>上下文</h2><p class="muted">项目圣经 / 当前场景 / 当前资源 / 历史结果。</p></section></div>
+      </section>
       <section id="export-tools" class="page placeholder-page" data-page="export-build">
         <span class="panel-kicker">EXPORT / BUILD</span>
         <h1>导出 / 构建</h1>
@@ -174,7 +199,10 @@
           <div><strong>Build Result</strong><small>预留构建日志、错误摘要和导出文件清单。</small></div>
         </div>
       </section>
-      <section class="page placeholder-page" data-page="settings-logs"><span class="panel-kicker">SETTINGS / LOGS</span><h1>设置 / 日志</h1><div class="placeholder-grid"><div>项目路径设置</div><div>Git 设置</div><div>主题设置</div><div>安全规则查看</div></div></section>
+      <section class="page module-page" data-page="settings-logs">
+        <div class="page-header compact"><div><span class="panel-kicker">SETTINGS / LOGS</span><h1>设置 / 日志</h1><p>项目路径、Git、主题、安全规则和诊断日志。</p></div><span class="page-chip">System</span></div>
+        <div class="module-card-grid"><div class="module-card"><h2>项目路径</h2><p>D:\GitHub\DemoAVG</p></div><div class="module-card"><h2>Git 状态</h2><p>扫描后显示 branch / clean / latest commit。</p></div><div class="module-card"><h2>主题设置</h2><p>深色正式工具面板。</p></div><div class="module-card"><h2>安全规则</h2><p>DemoAVG 只读，禁止自动导出和自动修复。</p></div></div>
+      </section>
     </main>
 
     <aside id="right_inspector" class="right-inspector">
