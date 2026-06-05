@@ -153,10 +153,33 @@
 
       <section id="resource-manager" class="page" data-page="assets">
         <div class="page-header compact"><div><span class="panel-kicker">ASSETS</span><h1>资源管理器</h1><p>图片、角色、UI、音频资源检查。</p></div><span id="resource-summary" class="pill">尚未检查</span></div>
-        <div id="resource-stats" class="resource-stats empty">点击“检查资源”查看资源统计。</div>
-        <div class="assets-layout">
-          <aside class="asset-tree card-lite"><h2>资源目录树</h2><div>game/images</div><div>game/gui</div><div>game/audio</div><div>game/sounds</div></aside>
-          <section class="asset-workbench card-lite"><h2>问题列表</h2><div class="resource-grid"><div><h3>命名 warning</h3><div id="resource-naming" class="resource-list empty">暂无数据。</div></div><div><h3>缺失引用</h3><div id="resource-missing" class="resource-list empty">暂无数据。</div></div><div><h3>未使用资源</h3><div id="resource-unused" class="resource-list empty">暂无数据。</div></div></div></section>
+        <div id="resource-stats" class="resource-stats resource-stat-cards empty">点击“检查资源”查看资源统计。</div>
+        <div class="resource-manager-layout">
+          <aside class="asset-tree card-lite">
+            <h2>资源目录树</h2>
+            <div>game/images</div><div>game/gui</div><div>game/audio</div><div>game/sounds</div>
+            <h2>类型筛选</h2>
+            <div id="resource-filters" class="resource-filters">
+              <button class="resource-filter active" type="button" data-resource-filter="all">全部</button>
+              <button class="resource-filter" type="button" data-resource-filter="backgrounds">背景</button>
+              <button class="resource-filter" type="button" data-resource-filter="characters">角色</button>
+              <button class="resource-filter" type="button" data-resource-filter="ui">UI</button>
+              <button class="resource-filter" type="button" data-resource-filter="audio">音频</button>
+              <button class="resource-filter" type="button" data-resource-filter="other_images">其他图片</button>
+            </div>
+          </aside>
+          <section class="resource-workbench card-lite">
+            <div class="resource-workbench-head"><h2>资源列表</h2><span id="resource-list-count" class="pill">0 items</span></div>
+            <div id="resource-list" class="resource-table empty">点击“检查资源”加载资源列表。</div>
+          </section>
+          <section class="resource-issues-panel card-lite">
+            <h2>问题列表</h2>
+            <div class="resource-issue-tabs">
+              <div><h3>命名 warning</h3><div id="resource-naming" class="resource-list empty">暂无数据。</div></div>
+              <div><h3>缺失引用</h3><div id="resource-missing" class="resource-list empty">暂无数据。</div></div>
+              <div><h3>未使用资源</h3><div id="resource-unused" class="resource-list empty">暂无数据。</div></div>
+            </div>
+          </section>
         </div>
       </section>
 
@@ -251,9 +274,11 @@
       </section>
 
       <section class="inspector-block hidden" data-inspector="assets">
-        <h2>资源详情 / 预览</h2>
+        <h2>资源详情</h2>
+        <div id="resource-detail" class="resource-detail empty">点击资源查看详情。</div>
+        <h2>图片预览</h2>
         <div id="resource-preview" class="resource-preview empty">点击图片资源预览。</div>
-        <div class="inspector-note">后续显示文件路径、尺寸、大小、格式、引用位置和命名规范检查。</div>
+        <div class="inspector-note">只读检查：不移动、不删除、不重命名、不自动修复资源。</div>
       </section>
 
       <section class="inspector-block hidden" data-inspector="placeholder">

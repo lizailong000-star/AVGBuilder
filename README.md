@@ -56,14 +56,15 @@ AVG Builder 是一个本地 HTTP 工具，用于只读扫描本地 Ren'Py 项目
   - `GET /api/hotspots/label-templates` 为问题热区生成测试 label 模板
   - 导出前先调用检查接口并在页面显示 warning
   - 只读检查，不保存、不导出、不修改 DemoAVG
-- V0.5 资源管理器基础版：
+- V0.5 / V0.5.2 资源管理器：
   - `GET /api/resources/inspect` 返回资源总览、命名 warning、缺失引用、未使用资源
   - `GET /api/resources/summary` 返回统计摘要
   - `GET /api/resources/missing` 返回缺失引用
   - `GET /api/resources/unused` 返回未使用资源
   - 扫描 `game/images/`、`game/gui/`、`game/audio/`、`game/sounds/`
   - 检查空格/中文/特殊字符、背景 bg_ 前缀、UI 命名、音频 bgm_/sfx_/amb_ 前缀
-  - 页面可查看资源统计、问题列表，并用 `/api/assets/file` 预览图片资源
+  - Resource Manager 页面提供资源统计卡、类型筛选、资源列表、命名 warning、缺失引用、未使用资源、资源详情与图片预览
+  - 图片预览统一走 `/api/assets/file`
   - 只读扫描，不移动、不删除、不重命名、不自动修复 DemoAVG 资源
 
 ## 项目结构
