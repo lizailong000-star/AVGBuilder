@@ -87,11 +87,11 @@ function nextId(){return uniqueId('hotspot_'+String((S.scene?.hotspots.length||0
 function uniqueId(base,allow=null){let ids=new Set((S.scene?.hotspots||[]).map(h=>h.id));let b=base||'hotspot';if(!ids.has(b)||b===allow)return b;let i=2;while(ids.has(`${b}_${i}`))i++;return `${b}_${i}`}
 function dirty(){S.dirty=true;setSave('unsaved');ui()}
 function setSave(v){S.save=v;S.dirty=v==='unsaved';E.saveStatus.className='save-status '+v;E.saveStatus.textContent={saved:'Saved',unsaved:'Unsaved',saving:'Saving...',failed:'Save failed'}[v]||v;ui()}
-function ui(){let has=!!S.sel,scene=!!S.scene;E.save.disabled=!scene;E.checkBtn.disabled=!S.projectPath;E.inspectBtn.disabled=!S.projectPath;E.exportBtn.disabled=!S.projectPath;E.apply.disabled=!has;E.del.disabled=!has;E.dup.disabled=!has;E.up.disabled=!has;E.down.disabled=!has;E.undo.disabled=S.undo.length<2;E.redo.disabled=!S.redo.length;E.save.textContent=S.save==='unsaved'?'淇濆瓨 hotspots.json *':'淇濆瓨 hotspots.json'}
+function ui(){let has=!!S.sel,scene=!!S.scene;E.save.disabled=!scene;E.checkBtn.disabled=!S.projectPath;E.inspectBtn.disabled=!S.projectPath;E.exportBtn.disabled=!S.projectPath;E.apply.disabled=!has;E.del.disabled=!has;E.dup.disabled=!has;E.up.disabled=!has;E.down.disabled=!has;E.undo.disabled=S.undo.length<2;E.redo.disabled=!S.redo.length;E.save.textContent=S.save==='unsaved'?'保存 hotspots.json *':'保存 hotspots.json'}
 function row(a,b){return `<div class="status-row"><span>${a}</span><strong>${b}</strong></div>`}
 function badge(v){return `<span class="badge ${v?'ok':'bad'}">${v?'OK':'MISS'}</span>`}
 function log(t){E.log.textContent=`${E.log.textContent}\n${t}`.trim()}
-function setLoad(v){E.scan.disabled=v;E.scan.textContent=v?'鎵弿涓?..':'鎵弿'}
+function setLoad(v){E.scan.disabled=v;E.scan.textContent=v?'扫描中...':'扫描项目'}
 function gx(){return S.dw?S.nw/S.dw:1}function gy(){return S.dh?S.nh/S.dh:1}
 function num(i,f){let v=Number(i.value);return Number.isFinite(v)?Math.round(v):f}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
