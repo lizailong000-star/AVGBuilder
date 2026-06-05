@@ -25,10 +25,15 @@ from .models import (
     LabelTemplateResult,
     ProjectOpenRequest,
     ProjectSummary,
+    ResourceInspectionResult,
+    ResourceSummary,
+    MissingReferenceItem,
+    UnusedResourceItem,
     normalize_project_path,
 )
 from .project_scanner import scan_project_structure
 from .renpy_exporter import export_hotspots
+from .resource_inspector import inspect_resources
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
@@ -161,6 +166,34 @@ def get_hotspot_label_templates() -> LabelTemplateResult:
     """Return suggested Ren'Py label templates for missing/empty/invalid targets."""
 
     return build_label_templates(_require_project_path())
+
+
+@app.get("/api/resources/inspect", response_model=ResourceInspectionResult)
+def get_resources_inspect() -> ResourceInspectionResult:
+    """Inspect resources, references, naming issues, missing refs, and unused assets."""
+
+    return inspect_resources(_require_project_path())
+
+
+@app.get("/api/resources/summary", response_model=ResourceSummary)
+def get_resources_summary() -> ResourceSummary:
+    """Return only resource inspection summary."""
+
+    return inspect_resources(_require_project_path()).summary
+
+
+@app.get("/api/resources/missing", response_model=list[MissingReferenceItem])
+def get_resources_missing() -> list[MissingReferenceItem]:
+    """Return missing resource references."""
+
+    return inspect_resources(_require_project_path()).missing_references
+
+
+@app.get("/api/resources/unused", response_model=list[UnusedResourceItem])
+def get_resources_unused() -> list[UnusedResourceItem]:
+    """Return resources not referenced by scanned .rpy files."""
+
+    return inspect_resources(_require_project_path()).unused_resources
 
 
 @app.post("/api/export/hotspots", response_model=ExportResult)

@@ -17,6 +17,7 @@
       <button id="scan-button" type="submit">扫描</button>
       <button id="save-hotspots-button" type="button" disabled>保存 hotspots.json</button>
       <button id="check-hotspots-button" type="button" disabled>检查 target_label</button>
+      <button id="inspect-resources-button" type="button" disabled>检查资源</button>
       <button id="export-hotspots-button" type="button" disabled>导出 Ren'Py 热区</button>
     </form>
     <div class="top-status">
@@ -94,6 +95,32 @@
       <p class="hint">空白处拖拽新建；拖动矩形移动；拖右下角控制点缩放；Ctrl+Z/Y 撤销/重做；Ctrl+滚轮或 Ctrl+±/0 缩放；Delete 删除；Ctrl+D 复制。</p>
     </aside>
   </main>
+
+  <section class="resource-card card">
+    <div class="check-header">
+      <h2>资源管理器</h2>
+      <span id="resource-summary" class="pill">尚未检查</span>
+    </div>
+    <div id="resource-stats" class="resource-stats empty">点击“检查资源”查看资源统计。</div>
+    <div class="resource-grid">
+      <div>
+        <h3>命名 warning</h3>
+        <div id="resource-naming" class="resource-list empty">暂无数据。</div>
+      </div>
+      <div>
+        <h3>缺失引用</h3>
+        <div id="resource-missing" class="resource-list empty">暂无数据。</div>
+      </div>
+      <div>
+        <h3>未使用资源</h3>
+        <div id="resource-unused" class="resource-list empty">暂无数据。</div>
+      </div>
+      <div>
+        <h3>图片预览</h3>
+        <div id="resource-preview" class="resource-preview empty">点击图片资源预览。</div>
+      </div>
+    </div>
+  </section>
 
   <section class="check-card card">
     <div class="check-header">

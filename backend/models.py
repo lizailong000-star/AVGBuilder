@@ -163,6 +163,66 @@ class LabelTemplateResult(BaseModel):
     templates: List[LabelTemplateItem] = Field(default_factory=list)
 
 
+class ResourceInfo(BaseModel):
+    """A discovered project resource."""
+
+    name: str
+    relative_path: str
+    category: str
+    extension: str
+    size_bytes: int
+    is_image: bool = False
+
+
+class ResourceIssue(BaseModel):
+    """Naming or convention issue for a resource."""
+
+    severity: str = "warning"
+    code: str
+    message: str
+    resource: ResourceInfo
+
+
+class MissingReferenceItem(BaseModel):
+    """A referenced asset path that does not exist."""
+
+    reference: str
+    file: str
+    line: int
+    reason: str = "missing"
+
+
+class UnusedResourceItem(BaseModel):
+    """A discovered resource that was not referenced by scanned .rpy files."""
+
+    resource: ResourceInfo
+
+
+class ResourceSummary(BaseModel):
+    """Aggregate resource inspection counts."""
+
+    total: int = 0
+    backgrounds: int = 0
+    characters: int = 0
+    ui: int = 0
+    audio: int = 0
+    other_images: int = 0
+    other: int = 0
+    naming_warnings: int = 0
+    missing_references: int = 0
+    unused_resources: int = 0
+
+
+class ResourceInspectionResult(BaseModel):
+    """Complete resource manager inspection result."""
+
+    summary: ResourceSummary
+    resources: List[ResourceInfo] = Field(default_factory=list)
+    naming_issues: List[ResourceIssue] = Field(default_factory=list)
+    missing_references: List[MissingReferenceItem] = Field(default_factory=list)
+    unused_resources: List[UnusedResourceItem] = Field(default_factory=list)
+
+
 def normalize_project_path(raw_path: str) -> Path:
     """Expand a user supplied path without creating or modifying it."""
 
