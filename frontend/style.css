@@ -756,3 +756,15 @@ button:disabled { opacity: .42; box-shadow: none; }
 .asset-row.asset-card:not([data-bg]) { cursor: default; }
 .asset-row.asset-card:not([data-bg])::after { content: none; }
 .asset-row.asset-card:not([data-bg]) .asset-meta { padding-right: 2px; }
+
+/* Hotspot asset list size correction to match reference */
+.asset-list { gap: 8px; }
+.asset-row.asset-card { grid-template-columns: 48px minmax(0, 1fr); min-height: 66px; padding: 8px; gap: 10px; border-radius: 15px; }
+.asset-thumb { width: 48px; height: 48px; border-radius: 12px; }
+.asset-meta { gap: 3px; padding-right: 18px; }
+.asset-meta strong { font-size: 12px; line-height: 1.25; font-weight: 800; }
+.asset-meta small { font-size: 10px; line-height: 1.35; }
+.asset-subline { gap: 6px; margin-top: 1px; }
+.asset-subline span { font-size: 9px; padding: 3px 6px; }
+.asset-subline em { font-size: 10px; }
+.asset-row.asset-card::after { font-size: 18px; }
