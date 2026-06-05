@@ -223,6 +223,75 @@ class ResourceInspectionResult(BaseModel):
     unused_resources: List[UnusedResourceItem] = Field(default_factory=list)
 
 
+class LabelGraphSummary(BaseModel):
+    """Aggregate label graph counts."""
+
+    label_count: int = 0
+    edge_count: int = 0
+    missing_count: int = 0
+    dynamic_count: int = 0
+    unused_count: int = 0
+
+
+class ScriptLabelNode(BaseModel):
+    """A Ren'Py label with graph metadata."""
+
+    name: str
+    file: str
+    line: int
+    category: str
+    incoming_count: int = 0
+    outgoing_count: int = 0
+    status: str = "ok"
+
+
+class ScriptGraphEdge(BaseModel):
+    """A jump/call relationship between labels."""
+
+    from_label: str
+    to_label: str
+    type: str
+    file: str
+    line: int
+    status: str = "ok"
+
+
+class LabelHotspotLink(BaseModel):
+    """A hotspot targeting a label."""
+
+    scene_id: str
+    hotspot_id: str
+    hotspot_name: str
+
+
+class LabelGraphResult(BaseModel):
+    """Full label graph scan result."""
+
+    ok: bool = True
+    summary: LabelGraphSummary
+    labels: List[ScriptLabelNode] = Field(default_factory=list)
+    edges: List[ScriptGraphEdge] = Field(default_factory=list)
+    missing: List[ScriptGraphEdge] = Field(default_factory=list)
+    unused: List[ScriptLabelNode] = Field(default_factory=list)
+
+
+class LabelDetailResult(BaseModel):
+    """Details for one label."""
+
+    ok: bool = True
+    label: Optional[ScriptLabelNode] = None
+    incoming: List[ScriptGraphEdge] = Field(default_factory=list)
+    outgoing: List[ScriptGraphEdge] = Field(default_factory=list)
+    hotspots: List[LabelHotspotLink] = Field(default_factory=list)
+
+
+class LabelHealthResult(BaseModel):
+    """Label graph health summary."""
+
+    ok: bool = True
+    summary: Dict[str, int]
+
+
 def normalize_project_path(raw_path: str) -> Path:
     """Expand a user supplied path without creating or modifying it."""
 

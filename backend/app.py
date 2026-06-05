@@ -21,6 +21,9 @@ from .models import (
     GitStatus,
     HotspotCheckResult,
     HotspotDocument,
+    LabelDetailResult,
+    LabelGraphResult,
+    LabelHealthResult,
     LabelInfo,
     LabelTemplateResult,
     ProjectOpenRequest,
@@ -34,6 +37,7 @@ from .models import (
 from .project_scanner import scan_project_structure
 from .renpy_exporter import export_hotspots
 from .resource_inspector import inspect_resources
+from .script_graph import build_label_graph, get_label_detail, get_label_health
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
@@ -152,6 +156,27 @@ def get_labels() -> list[LabelInfo]:
     """Return Ren'Py labels found in game/**/*.rpy for the current project."""
 
     return scan_labels(_require_project_path())
+
+
+@app.get("/api/labels/graph", response_model=LabelGraphResult)
+def get_labels_graph() -> LabelGraphResult:
+    """Return Ren'Py label graph, simple jump/call edges, missing links, and unused labels."""
+
+    return build_label_graph(_require_project_path())
+
+
+@app.get("/api/labels/detail", response_model=LabelDetailResult)
+def get_label_detail_api(name: str = Query(..., description="Label name")) -> LabelDetailResult:
+    """Return one label's incoming/outgoing edges and hotspot links."""
+
+    return get_label_detail(_require_project_path(), name)
+
+
+@app.get("/api/labels/health", response_model=LabelHealthResult)
+def get_labels_health() -> LabelHealthResult:
+    """Return label graph health counts."""
+
+    return get_label_health(_require_project_path())
 
 
 @app.get("/api/hotspots/check", response_model=HotspotCheckResult)

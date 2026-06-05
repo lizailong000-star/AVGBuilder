@@ -184,11 +184,23 @@
       </section>
 
       <section class="page module-page" data-page="labels">
-        <div class="page-header compact"><div><span class="panel-kicker">LABEL / NODES</span><h1>Label / 剧情节点</h1><p>可视化 Ren’Py label、jump/call 关系、死链和未使用节点。</p></div><span class="page-chip">V0.6 planned</span></div>
-        <div class="module-board labels-board">
-          <aside class="module-rail card-lite"><h2>Label 列表</h2><div class="module-search">Search label...</div><div class="module-list-row active">start · script.rpy:12</div><div class="module-list-row">scene_lobby · chapter_02.rpy</div><div class="module-list-row">test_hotspot_* · generated</div></aside>
-          <section class="module-center card-lite"><h2>Jump / Call 关系</h2><div class="node-canvas"><span>start</span><i></i><span>scene_lobby</span><i></i><span>hotspot_event</span></div></section>
-          <section class="module-detail card-lite"><h2>节点详情</h2><div class="detail-row">来源文件 <strong>待扫描</strong></div><div class="detail-row">入边 / 出边 <strong>- / -</strong></div><div class="detail-row">状态 <strong>预留</strong></div></section>
+        <div class="page-header compact"><div><span class="panel-kicker">LABEL / NODES</span><h1>Label / 剧情节点</h1><p>可视化 Ren’Py label、jump/call 关系、死链和未使用节点。</p></div><span id="label-graph-summary" class="page-chip">未扫描</span></div>
+        <div id="label-health-cards" class="label-health-cards empty">点击“加载 Label 图谱”扫描剧情节点。</div>
+        <div class="label-toolbar card-lite">
+          <button id="load-label-graph-button" type="button">加载 Label 图谱</button>
+          <input id="label-search" type="search" placeholder="搜索 label 名称" />
+          <div id="label-category-filters" class="label-category-filters">
+            <button class="label-filter active" type="button" data-label-filter="all">全部</button>
+            <button class="label-filter" type="button" data-label-filter="story">正式剧情</button>
+            <button class="label-filter" type="button" data-label-filter="test">测试</button>
+            <button class="label-filter" type="button" data-label-filter="investigation">调查</button>
+            <button class="label-filter" type="button" data-label-filter="system">系统</button>
+            <button class="label-filter" type="button" data-label-filter="unknown">未知</button>
+          </div>
+        </div>
+        <div class="label-manager-layout">
+          <aside class="label-list-panel card-lite"><h2>Label 列表</h2><div id="label-list" class="label-list empty">暂无数据。</div></aside>
+          <section class="label-graph-panel card-lite"><h2>Jump / Call 关系</h2><div id="label-edge-list" class="label-edge-list empty">暂无跳转关系。</div><h2>死链</h2><div id="label-missing-list" class="label-issue-list empty">暂无数据。</div><h2>可能未使用</h2><div id="label-unused-list" class="label-issue-list empty">暂无数据。</div></section>
         </div>
       </section>
       <section class="page module-page" data-page="dialogue">
@@ -279,6 +291,11 @@
         <h2>图片预览</h2>
         <div id="resource-preview" class="resource-preview empty">点击图片资源预览。</div>
         <div class="inspector-note">只读检查：不移动、不删除、不重命名、不自动修复资源。</div>
+      </section>
+
+      <section class="inspector-block hidden" data-inspector="labels">
+        <h2>Label 详情</h2>
+        <div id="label-detail" class="label-detail empty">点击 label 查看详情。</div>
       </section>
 
       <section class="inspector-block hidden" data-inspector="placeholder">
