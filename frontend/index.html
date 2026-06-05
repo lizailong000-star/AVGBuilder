@@ -3,146 +3,233 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AVG Builder V0.5.1</title>
+  <title>AVG Builder V0.6 App Shell</title>
   <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/styles/theme.css" />
+  <link rel="stylesheet" href="/static/styles/layout.css" />
+  <link rel="stylesheet" href="/static/styles/components.css" />
+  <link rel="stylesheet" href="/static/styles/dashboard.css" />
+  <link rel="stylesheet" href="/static/styles/modules.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="eyebrow">AVG Builder V0.5.1</span>
-      <strong>Production Control Panel</strong>
-    </div>
-    <form id="scan-form" class="top-form">
-      <input id="project-path" type="text" value="D:\GitHub\DemoAVG" placeholder="D:\GitHub\DemoAVG" required />
-      <button id="scan-button" type="submit">扫描</button>
-      <button id="save-hotspots-button" type="button" disabled>保存 hotspots.json</button>
-      <button id="check-hotspots-button" type="button" disabled>检查 target_label</button>
-      <button id="inspect-resources-button" type="button" disabled>检查资源</button>
-      <button id="export-hotspots-button" type="button" disabled>导出 Ren'Py 热区</button>
-    </form>
-    <div class="top-status">
-      <div id="save-status" class="save-status saved">Saved</div>
-      <div id="export-status" class="chip">Export：未导出</div>
-      <div id="git-chip" class="chip">Git：未扫描</div>
-    </div>
-  </header>
-
-  <main class="app-shell">
-    <aside class="sidebar card">
-      <div class="panel-kicker">MODULES</div>
-      <nav class="module-nav" aria-label="AVGBuilder modules">
-        <a href="#scan-form" class="module-link active"><span>01</span>Project Scan</a>
-        <a href="#canvas-wrap" class="module-link"><span>02</span>Hotspot Editor</a>
-        <a href="#export-status" class="module-link"><span>03</span>Export Tools</a>
-        <a href="#production-check" class="module-link"><span>04</span>Production Check</a>
-      </nav>
-      <h2>资源</h2>
-      <div id="project-status" class="status-list empty">尚未扫描项目。</div>
-      <div id="asset-tabs" class="asset-tabs"></div>
-      <div id="asset-count" class="pill">0 个资源</div>
-      <div id="asset-list" class="asset-list empty">尚未扫描资源。</div>
-    </aside>
-
-    <section class="canvas-panel card">
-      <div class="canvas-toolbar">
+  <div class="app-shell-v2">
+    <aside id="left_sidebar" class="left-sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-mark">AVG</span>
         <div>
-          <h2>背景画布</h2>
-          <span id="selected-background" class="muted">未选择背景</span>
-        </div>
-        <div class="canvas-meta">
-          <span id="mouse-position">鼠标：-</span>
-          <span id="canvas-scale">缩放：-</span>
+          <span class="eyebrow">AVG Builder</span>
+          <strong>Control Console</strong>
         </div>
       </div>
-      <div class="tool-row">
-        <button id="undo-button" type="button" disabled>撤销 Ctrl+Z</button>
-        <button id="redo-button" type="button" disabled>重做 Ctrl+Y</button>
-        <span class="tool-separator"></span>
-        <button class="zoom-button" type="button" data-zoom="0.25">25%</button>
-        <button class="zoom-button" type="button" data-zoom="0.5">50%</button>
-        <button class="zoom-button" type="button" data-zoom="0.75">75%</button>
-        <button class="zoom-button active" type="button" data-zoom="1">100%</button>
-        <button class="zoom-button" type="button" data-zoom="1.25">125%</button>
-        <button class="zoom-button" type="button" data-zoom="1.5">150%</button>
-        <button class="zoom-button" type="button" data-zoom="2">200%</button>
+      <nav class="primary-nav" aria-label="Primary modules">
+        <button class="primary-nav-item active" type="button" data-route="dashboard"><span>⌂</span>项目仪表盘</button>
+        <button class="primary-nav-item" type="button" data-route="hotspot-editor"><span>◎</span>热区编辑</button>
+        <button class="primary-nav-item" type="button" data-route="assets"><span>▣</span>资源管理</button>
+        <button class="primary-nav-item" type="button" data-route="labels"><span>◇</span>Label / 剧情节点</button>
+        <button class="primary-nav-item" type="button" data-route="dialogue"><span>☰</span>对话编辑</button>
+        <button class="primary-nav-item" type="button" data-route="ui-config"><span>◈</span>UI / 配置检查</button>
+        <button class="primary-nav-item" type="button" data-route="audio"><span>♪</span>声音管理</button>
+        <button class="primary-nav-item" type="button" data-route="ai-assistant"><span>✦</span>AI 助手</button>
+        <button class="primary-nav-item" type="button" data-route="export-build"><span>⇪</span>导出 / 构建</button>
+        <button class="primary-nav-item" type="button" data-route="settings-logs"><span>⚙</span>设置 / 日志</button>
+      </nav>
+      <div class="sidebar-footer">
+        <span class="status-dot"></span>
+        <span>Local workspace only</span>
       </div>
-      <div id="canvas-empty" class="canvas-empty">点击左侧背景资源开始编辑。</div>
-      <div id="canvas-scroll" class="canvas-scroll hidden">
-        <div id="canvas-wrap" class="canvas-wrap">
-          <img id="background-preview" alt="背景预览" draggable="false" />
-          <div id="hotspot-layer"></div>
-        </div>
-      </div>
-    </section>
-
-    <aside class="inspector card">
-      <h2>热区属性</h2>
-      <div id="hotspot-list" class="hotspot-list empty">选择背景后可编辑热区。</div>
-      <form id="hotspot-form" class="hotspot-form">
-        <input id="hotspot-id-hidden" type="hidden" />
-        <label>ID<input id="hotspot-id" required placeholder="hotspot_001" /></label>
-        <label>名称<input id="hotspot-name" required placeholder="新热区" /></label>
-        <label>目标 label<input id="hotspot-target" placeholder="test_label" /></label>
-        <label>提示文本<input id="hotspot-tooltip" placeholder="提示文本" /></label>
-        <div class="form-grid numeric-grid">
-          <label>X<input id="hotspot-x" type="number" min="0" value="0" required /></label>
-          <label>Y<input id="hotspot-y" type="number" min="0" value="0" required /></label>
-          <label>W<input id="hotspot-w" type="number" min="1" value="100" required /></label>
-          <label>H<input id="hotspot-h" type="number" min="1" value="100" required /></label>
-        </div>
-        <label class="checkbox-label"><input id="hotspot-enabled" type="checkbox" checked /> enabled</label>
-        <div class="button-row">
-          <button id="apply-hotspot-button" type="submit" disabled>应用表单</button>
-          <button id="move-up-button" type="button" disabled>上移</button>
-          <button id="move-down-button" type="button" disabled>下移</button>
-          <button id="delete-hotspot-button" type="button" disabled>删除</button>
-          <button id="duplicate-hotspot-button" type="button" disabled>复制</button>
-        </div>
-      </form>
-      <p class="hint">空白处拖拽新建；拖动矩形移动；拖右下角控制点缩放；Ctrl+Z/Y 撤销/重做；Ctrl+滚轮或 Ctrl+±/0 缩放；Delete 删除；Ctrl+D 复制。</p>
     </aside>
-  </main>
 
-  <section class="resource-card card">
-    <div class="check-header">
-      <h2>资源管理器</h2>
-      <span id="resource-summary" class="pill">尚未检查</span>
-    </div>
-    <div id="resource-stats" class="resource-stats empty">点击“检查资源”查看资源统计。</div>
-    <div class="resource-grid">
-      <div>
-        <h3>命名 warning</h3>
-        <div id="resource-naming" class="resource-list empty">暂无数据。</div>
+    <header id="top_bar" class="top-bar-v2">
+      <form id="scan-form" class="project-command-bar">
+        <label class="project-path-field">
+          <span>PROJECT PATH</span>
+          <input id="project-path" type="text" value="D:\GitHub\DemoAVG" placeholder="D:\GitHub\DemoAVG" required />
+        </label>
+        <button id="scan-button" type="submit">扫描项目</button>
+        <button id="save-hotspots-button" type="button" disabled>保存 hotspots.json</button>
+        <button id="check-hotspots-button" type="button" disabled>检查 target_label</button>
+        <button id="inspect-resources-button" type="button" disabled>检查资源</button>
+        <button id="export-hotspots-button" type="button" disabled>导出 Ren'Py 热区</button>
+      </form>
+      <div class="top-status-v2">
+        <div id="save-status" class="save-status saved">Saved</div>
+        <div id="export-status" class="chip">Export：未导出</div>
+        <div id="git-chip" class="chip">Git：未扫描</div>
       </div>
-      <div>
-        <h3>缺失引用</h3>
-        <div id="resource-missing" class="resource-list empty">暂无数据。</div>
-      </div>
-      <div>
-        <h3>未使用资源</h3>
-        <div id="resource-unused" class="resource-list empty">暂无数据。</div>
-      </div>
-      <div>
-        <h3>图片预览</h3>
+    </header>
+
+    <main id="main_workspace" class="main-workspace">
+      <section class="page active" data-page="dashboard">
+        <div class="page-header">
+          <div>
+            <span class="panel-kicker">DASHBOARD</span>
+            <h1>项目仪表盘</h1>
+            <p>项目总览、健康状态、快捷入口、任务和建议。</p>
+          </div>
+          <div id="dashboard-project-chip" class="page-chip">等待扫描</div>
+        </div>
+
+        <div class="dashboard-grid">
+          <article class="metric-card wide">
+            <span>当前项目</span>
+            <strong id="dashboard-project-name">未扫描</strong>
+            <small id="dashboard-project-path">D:\GitHub\DemoAVG</small>
+          </article>
+          <article class="metric-card"><span>资源总数</span><strong id="dashboard-assets-total">0</strong><small>Images / Audio</small></article>
+          <article class="metric-card"><span>Label 状态</span><strong id="dashboard-hotspot-ok">-</strong><small>hotspot check</small></article>
+          <article class="metric-card"><span>缺失引用</span><strong id="dashboard-missing-count">-</strong><small>resource scan</small></article>
+          <article class="metric-card"><span>未使用资源</span><strong id="dashboard-unused-count">-</strong><small>resource scan</small></article>
+        </div>
+
+        <div class="quick-grid">
+          <button class="quick-card" type="button" data-route="hotspot-editor"><span>◎</span><strong>热区编辑</strong><small>画布、热区、target_label</small></button>
+          <button class="quick-card" type="button" data-route="assets"><span>▣</span><strong>资源管理</strong><small>命名、缺失、未使用</small></button>
+          <button class="quick-card" type="button" data-route="labels"><span>◇</span><strong>Label 管理</strong><small>节点关系预留</small></button>
+          <button class="quick-card" type="button" data-route="dialogue"><span>☰</span><strong>对话编辑</strong><small>对白块预留</small></button>
+          <button class="quick-card" type="button" data-route="ai-assistant"><span>✦</span><strong>AI 助手</strong><small>剧情 / 资源建议预留</small></button>
+        </div>
+
+        <div class="dashboard-lower-grid">
+          <section class="dashboard-panel card-lite">
+            <h2>项目健康检查</h2>
+            <div id="project-status" class="status-list empty">尚未扫描项目。</div>
+          </section>
+          <section class="dashboard-panel card-lite">
+            <h2>最近文件 / 活动</h2>
+            <div class="activity-list">
+              <div><span>V0.4</span>Production check mounted</div>
+              <div><span>V0.5</span>Resource manager mounted</div>
+              <div><span>V0.6</span>AppShell hierarchy in progress</div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="page" data-page="hotspot-editor">
+        <div class="page-header compact">
+          <div>
+            <span class="panel-kicker">HOTSPOT EDITOR</span>
+            <h1>热区编辑器</h1>
+          </div>
+          <div class="canvas-meta"><span id="mouse-position">鼠标：-</span><span id="canvas-scale">缩放：-</span></div>
+        </div>
+        <div class="hotspot-layout">
+          <aside class="module-list-panel card-lite">
+            <h2>背景资源</h2>
+            <div id="asset-tabs" class="asset-tabs"></div>
+            <div id="asset-count" class="pill">0 个资源</div>
+            <div id="asset-list" class="asset-list empty">尚未扫描资源。</div>
+          </aside>
+          <section class="canvas-panel-v2 card-lite">
+            <div class="canvas-toolbar">
+              <div><h2>背景画布</h2><span id="selected-background" class="muted">未选择背景</span></div>
+            </div>
+            <div class="tool-row">
+              <button id="undo-button" type="button" disabled>撤销 Ctrl+Z</button>
+              <button id="redo-button" type="button" disabled>重做 Ctrl+Y</button>
+              <span class="tool-separator"></span>
+              <button class="zoom-button active" type="button" data-zoom="1">100%</button>
+              <button class="zoom-button" type="button" data-zoom="0.25">25%</button>
+              <button class="zoom-button" type="button" data-zoom="0.5">50%</button>
+              <button class="zoom-button" type="button" data-zoom="0.75">75%</button>
+              <button class="zoom-button" type="button" data-zoom="1.25">125%</button>
+              <button class="zoom-button" type="button" data-zoom="1.5">150%</button>
+              <button class="zoom-button" type="button" data-zoom="2">200%</button>
+            </div>
+            <div id="canvas-empty" class="canvas-empty">点击左侧背景资源开始编辑。</div>
+            <div id="canvas-scroll" class="canvas-scroll hidden">
+              <div id="canvas-wrap" class="canvas-wrap">
+                <img id="background-preview" alt="背景预览" draggable="false" />
+                <div id="hotspot-layer"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="page" data-page="assets">
+        <div class="page-header compact"><div><span class="panel-kicker">ASSETS</span><h1>资源管理器</h1><p>图片、角色、UI、音频资源检查。</p></div><span id="resource-summary" class="pill">尚未检查</span></div>
+        <div id="resource-stats" class="resource-stats empty">点击“检查资源”查看资源统计。</div>
+        <div class="assets-layout">
+          <aside class="asset-tree card-lite"><h2>资源目录树</h2><div>game/images</div><div>game/gui</div><div>game/audio</div><div>game/sounds</div></aside>
+          <section class="asset-workbench card-lite"><h2>问题列表</h2><div class="resource-grid"><div><h3>命名 warning</h3><div id="resource-naming" class="resource-list empty">暂无数据。</div></div><div><h3>缺失引用</h3><div id="resource-missing" class="resource-list empty">暂无数据。</div></div><div><h3>未使用资源</h3><div id="resource-unused" class="resource-list empty">暂无数据。</div></div></div></section>
+        </div>
+      </section>
+
+      <section class="page placeholder-page" data-page="labels"><span class="panel-kicker">LABELS V0.6</span><h1>Label / 剧情节点管理器</h1><div class="placeholder-grid"><div>Label 列表</div><div>Jump / Call 关系图</div><div>死链检查</div><div>文件与行号定位</div></div></section>
+      <section class="page placeholder-page" data-page="dialogue"><span class="panel-kicker">DIALOGUE V0.7</span><h1>对话编辑器</h1><div class="placeholder-grid"><div>剧情块列表</div><div>对白行编辑</div><div>角色 / 背景 / BGM</div><div>Ren’Py 代码预览</div></div></section>
+      <section class="page placeholder-page" data-page="ui-config"><span class="panel-kicker">UI CONFIG V0.8</span><h1>UI / 配置健康检查</h1><div class="placeholder-grid"><div>配置文件状态</div><div>字体检查</div><div>screens/gui/options</div><div>Ren’Py lint warnings</div></div></section>
+      <section class="page placeholder-page" data-page="audio"><span class="panel-kicker">AUDIO V0.9</span><h1>声音管理器</h1><div class="placeholder-grid"><div>BGM</div><div>SFX</div><div>Ambience</div><div>Voice</div></div></section>
+      <section class="page placeholder-page" data-page="ai-assistant"><span class="panel-kicker">AI ASSISTANT V1.1+</span><h1>AI 助手</h1><div class="placeholder-grid"><div>任务类型</div><div>上下文选择</div><div>输入区</div><div>输出区</div></div></section>
+      <section class="page placeholder-page" data-page="export-build"><span class="panel-kicker">EXPORT / BUILD</span><h1>导出 / 构建</h1><div class="placeholder-grid"><div>导出 hotspots</div><div>导出 dialogue blocks</div><div>Ren’Py lint</div><div>构建结果</div></div></</section>
+      <section class="page placeholder-page" data-page="settings-logs"><span class="panel-kicker">SETTINGS / LOGS</span><h1>设置 / 日志</h1><div class="placeholder-grid"><div>项目路径设置</div><div>Git 设置</div><div>主题设置</div><div>安全规则查看</div></div></section>
+    </main>
+
+    <aside id="right_inspector" class="right-inspector">
+      <section class="inspector-block" data-inspector="dashboard">
+        <h2>AI 建议摘要</h2>
+        <div class="ai-suggestion">先扫描项目，再进入热区编辑或资源管理。后续这里承载 AI 建议、任务队列和快速操作。</div>
+        <h2>快速操作</h2>
+        <div class="quick-actions">
+          <button type="button" data-route="hotspot-editor">打开热区编辑</button>
+          <button type="button" data-route="assets">打开资源管理</button>
+        </div>
+      </section>
+
+      <section class="inspector-block hidden" data-inspector="hotspot-editor">
+        <h2>热区属性</h2>
+        <div id="hotspot-list" class="hotspot-list empty">选择背景后可编辑热区。</div>
+        <form id="hotspot-form" class="hotspot-form">
+          <input id="hotspot-id-hidden" type="hidden" />
+          <label>ID<input id="hotspot-id" required placeholder="hotspot_001" /></label>
+          <label>名称<input id="hotspot-name" required placeholder="新热区" /></label>
+          <label>目标 label<input id="hotspot-target" placeholder="test_label" /></label>
+          <label>提示文本<input id="hotspot-tooltip" placeholder="提示文本" /></label>
+          <div class="form-grid numeric-grid">
+            <label>X<input id="hotspot-x" type="number" min="0" value="0" required /></label>
+            <label>Y<input id="hotspot-y" type="number" min="0" value="0" required /></label>
+            <label>W<input id="hotspot-w" type="number" min="1" value="100" required /></label>
+            <label>H<input id="hotspot-h" type="number" min="1" value="100" required /></label>
+          </div>
+          <label class="checkbox-label"><input id="hotspot-enabled" type="checkbox" checked /> enabled</label>
+          <div class="button-row">
+            <button id="apply-hotspot-button" type="submit" disabled>应用表单</button>
+            <button id="move-up-button" type="button" disabled>上移</button>
+            <button id="move-down-button" type="button" disabled>下移</button>
+            <button id="delete-hotspot-button" type="button" disabled>删除</button>
+            <button id="duplicate-hotspot-button" type="button" disabled>复制</button>
+          </div>
+        </form>
+        <p class="hint">空白处拖拽新建；拖动矩形移动；拖右下角控制点缩放；Ctrl+Z/Y 撤销/重做；Delete 删除。</p>
+        <div class="production-check-mini">
+          <h2>target_label 检查结果</h2>
+          <span id="check-summary" class="pill">尚未检查</span>
+          <div id="check-list" class="check-list empty">点击“检查 target_label”查看死链、空 label 和命名建议。</div>
+          <h3>测试 label 模板预览</h3>
+          <pre id="template-preview" class="template-preview">暂无模板。</pre>
+        </div>
+      </section>
+
+      <section class="inspector-block hidden" data-inspector="assets">
+        <h2>资源详情 / 预览</h2>
         <div id="resource-preview" class="resource-preview empty">点击图片资源预览。</div>
+        <div class="inspector-note">后续显示文件路径、尺寸、大小、格式、引用位置和命名规范检查。</div>
+      </section>
+
+      <section class="inspector-block hidden" data-inspector="placeholder">
+        <h2>模块检查区</h2>
+        <div class="ai-suggestion">当前模块为布局占位。后续在这里显示属性、检查结果、AI 建议和任务队列。</div>
+      </section>
+    </aside>
+
+    <footer id="bottom_log" class="bottom-log">
+      <div class="bottom-log-header">
+        <span>LOG / TASKS / BUILD STATUS</span>
+        <span>read-only unless explicitly saving AVGBuilder</span>
       </div>
-    </div>
-  </section>
-
-  <section id="production-check" class="check-card card">
-    <div class="check-header">
-      <h2>热区生产检查</h2>
-      <span id="check-summary" class="pill">尚未检查</span>
-    </div>
-    <div id="check-list" class="check-list empty">点击“检查 target_label”查看死链、空 label 和命名建议。</div>
-    <h3>测试 label 模板预览</h3>
-    <pre id="template-preview" class="template-preview">暂无模板。</pre>
-  </section>
-
-  <section class="log-card card">
-    <h2>日志</h2>
-    <pre id="scan-log" class="scan-log">等待扫描...</pre>
-  </section>
+      <pre id="scan-log" class="scan-log">等待扫描...</pre>
+    </footer>
+  </div>
 
   <script src="/static/app.js"></script>
 </body>
