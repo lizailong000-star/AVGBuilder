@@ -672,3 +672,22 @@ button:disabled { opacity: .42; box-shadow: none; }
 .label-bottom-panels { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 14px; }
 .label-bottom-panels .label-edge-list, .label-bottom-panels .label-issue-list { max-height: 260px; }
 @media (max-width: 1280px) { .label-bottom-panels { grid-template-columns: 1fr; } .label-graph-canvas { height: 520px; } }
+
+/* V0.6.2 label graph diagnostics */
+.label-toolbar { grid-template-columns: auto minmax(220px, 1fr); align-items: start; }
+.label-toolbar #label-filter, .label-toolbar #label-status-filter, .label-toolbar #label-edge-filter { grid-column: 1 / -1; justify-content: flex-start; }
+.graph-group rect { fill: rgba(15,31,57,.28); stroke: rgba(108,139,178,.18); stroke-width: 1; }
+.graph-group text { fill: rgba(226,242,255,.58); font-size: 12px; font-weight: 900; letter-spacing: .04em; }
+.graph-group.story rect { fill: rgba(56,189,248,.05); }
+.graph-group.test rect { fill: rgba(139,92,246,.06); }
+.graph-group.investigation rect { fill: rgba(52,211,153,.05); }
+.graph-group.unknown rect { fill: rgba(251,146,60,.05); }
+.graph-edge.dim { opacity: .16; }
+.graph-edge.related { stroke-width: 3; opacity: 1; }
+.graph-node.dim { opacity: .22; }
+.graph-node.related { opacity: .98; }
+.graph-node.hotspot-linked rect { filter: drop-shadow(0 0 7px rgba(52,211,153,.35)); }
+.label-fix-suggestions { display: grid; gap: 10px; }
+.label-fix-suggestions h3 { margin: 0; color: #fef3c7; }
+.label-fix-suggestions p { margin: 0; padding: 10px; border: 1px solid var(--line); border-left: 5px solid var(--warn); border-radius: 12px; background: rgba(2,6,23,.34); color: var(--muted); line-height: 1.5; }
+#label-graph-visible-count { display: inline-flex; align-items: center; min-width: 130px; justify-content: center; }

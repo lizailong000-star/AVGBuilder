@@ -242,6 +242,7 @@ class ScriptLabelNode(BaseModel):
     category: str
     incoming_count: int = 0
     outgoing_count: int = 0
+    hotspot_count: int = 0
     status: str = "ok"
 
 

@@ -50,6 +50,7 @@ def build_label_graph(project_path: Path) -> LabelGraphResult:
             category=base.category,
             incoming_count=len(incoming.get(name, [])),
             outgoing_count=len(outgoing.get(name, [])),
+            hotspot_count=len(hotspots_by_label.get(name, [])),
             status=status,
         ))
 

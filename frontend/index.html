@@ -197,11 +197,26 @@
             <button class="label-filter" type="button" data-label-filter="system">系统</button>
             <button class="label-filter" type="button" data-label-filter="unknown">未知</button>
           </div>
+          <div id="label-status-filter" class="label-category-filters">
+            <button class="label-filter active" type="button" data-label-status="all">全部状态</button>
+            <button class="label-filter" type="button" data-label-status="ok">正常</button>
+            <button class="label-filter" type="button" data-label-status="missing">Missing</button>
+            <button class="label-filter" type="button" data-label-status="dynamic">Dynamic</button>
+            <button class="label-filter" type="button" data-label-status="possibly_unused">Possibly Unused</button>
+            <button class="label-filter" type="button" data-label-status="hotspot_linked">Hotspot Linked</button>
+          </div>
+          <div id="label-edge-filter" class="label-category-filters">
+            <button class="label-filter active" type="button" data-edge-filter="all">全部关系</button>
+            <button class="label-filter" type="button" data-edge-filter="jump">Jump</button>
+            <button class="label-filter" type="button" data-edge-filter="call">Call</button>
+            <button class="label-filter" type="button" data-edge-filter="dynamic">Dynamic</button>
+            <button class="label-filter" type="button" data-edge-filter="missing">Missing</button>
+          </div>
         </div>
         <div class="label-manager-layout">
           <aside class="label-list-panel card-lite"><h2>Label 列表</h2><div id="label-list" class="label-list empty">暂无数据。</div></aside>
           <section id="label-graph-panel" class="label-graph-panel card-lite">
-            <div class="graph-toolbar"><h2>Label 图谱</h2><div><button id="label-graph-fit" type="button">适配</button><button id="label-graph-zoom-in" type="button">+</button><button id="label-graph-zoom-out" type="button">-</button></div></div>
+            <div class="graph-toolbar"><h2>Label 图谱</h2><div><span id="label-graph-visible-count" class="pill">0 nodes / 0 edges</span><button id="label-show-neighbors" type="button">Show Neighbors</button><button id="label-show-all" type="button">Show All</button><button id="label-graph-fit" type="button">适配</button><button id="label-graph-zoom-in" type="button">+</button><button id="label-graph-zoom-out" type="button">-</button></div></div>
             <div id="label-graph-canvas" class="label-graph-canvas"><svg id="label-graph-svg" xmlns="http://www.w3.org/2000/svg"></svg></div>
           </section>
         </div>
@@ -304,6 +319,8 @@
       <section id="label-inspector" class="inspector-block hidden" data-inspector="labels">
         <h2>Label 详情</h2>
         <div id="label-detail" class="label-detail empty">点击 label 查看详情。</div>
+        <h2>Fix Suggestions</h2>
+        <div id="label-fix-suggestions" class="label-fix-suggestions empty">选择 label 后显示修复建议。</div>
       </section>
 
       <section class="inspector-block hidden" data-inspector="placeholder">
