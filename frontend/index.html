@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AVG Builder V0.6 App Shell</title>
+  <title>AVG Builder V0.5.1 Official Panel</title>
   <link rel="stylesheet" href="/static/style.css" />
   <link rel="stylesheet" href="/static/styles/theme.css" />
   <link rel="stylesheet" href="/static/styles/layout.css" />
@@ -22,16 +22,16 @@
         </div>
       </div>
       <nav class="primary-nav" aria-label="Primary modules">
-        <button class="primary-nav-item active" type="button" data-route="dashboard"><span>⌂</span>项目仪表盘</button>
-        <button class="primary-nav-item" type="button" data-route="hotspot-editor"><span>◎</span>热区编辑</button>
-        <button class="primary-nav-item" type="button" data-route="assets"><span>▣</span>资源管理</button>
-        <button class="primary-nav-item" type="button" data-route="labels"><span>◇</span>Label / 剧情节点</button>
-        <button class="primary-nav-item" type="button" data-route="dialogue"><span>☰</span>对话编辑</button>
-        <button class="primary-nav-item" type="button" data-route="ui-config"><span>◈</span>UI / 配置检查</button>
-        <button class="primary-nav-item" type="button" data-route="audio"><span>♪</span>声音管理</button>
-        <button class="primary-nav-item" type="button" data-route="ai-assistant"><span>✦</span>AI 助手</button>
-        <button class="primary-nav-item" type="button" data-route="export-build"><span>⇪</span>导出 / 构建</button>
-        <button class="primary-nav-item" type="button" data-route="settings-logs"><span>⚙</span>设置 / 日志</button>
+        <button class="primary-nav-item active" type="button" data-route="dashboard"><span>⌂</span>Dashboard</button>
+        <button class="primary-nav-item" type="button" data-route="dashboard"><span>⟲</span>Project Scan</button>
+        <button class="primary-nav-item" type="button" data-route="hotspot-editor"><span>◎</span>Hotspot Editor</button>
+        <button class="primary-nav-item" type="button" data-route="assets"><span>▣</span>Resource Manager</button>
+        <button class="primary-nav-item" type="button" data-route="hotspot-editor"><span>◇</span>Production Check</button>
+        <button class="primary-nav-item" type="button" data-route="export-build"><span>⇪</span>Export / Build</button>
+        <button class="primary-nav-item" type="button" data-route="labels"><span>◇</span>Label / Nodes</button>
+        <button class="primary-nav-item" type="button" data-route="dialogue"><span>☰</span>Dialogue</button>
+        <button class="primary-nav-item" type="button" data-route="ai-assistant"><span>✦</span>AI Assistant</button>
+        <button class="primary-nav-item" type="button" data-route="settings-logs"><span>⚙</span>Settings / Logs</button>
       </nav>
       <div class="sidebar-footer">
         <span class="status-dot"></span>
@@ -101,7 +101,7 @@
             <div class="activity-list">
               <div><span>V0.4</span>Production check mounted</div>
               <div><span>V0.5</span>Resource manager mounted</div>
-              <div><span>V0.6</span>AppShell hierarchy in progress</div>
+              <div><span>V0.5.1</span>Official AppShell dashboard layout</div>
             </div>
           </section>
         </div>
@@ -163,7 +163,17 @@
       <section class="page placeholder-page" data-page="ui-config"><span class="panel-kicker">UI CONFIG V0.8</span><h1>UI / 配置健康检查</h1><div class="placeholder-grid"><div>配置文件状态</div><div>字体检查</div><div>screens/gui/options</div><div>Ren’Py lint warnings</div></div></section>
       <section class="page placeholder-page" data-page="audio"><span class="panel-kicker">AUDIO V0.9</span><h1>声音管理器</h1><div class="placeholder-grid"><div>BGM</div><div>SFX</div><div>Ambience</div><div>Voice</div></div></section>
       <section class="page placeholder-page" data-page="ai-assistant"><span class="panel-kicker">AI ASSISTANT V1.1+</span><h1>AI 助手</h1><div class="placeholder-grid"><div>任务类型</div><div>上下文选择</div><div>输入区</div><div>输出区</div></div></section>
-      <section id="export-tools" class="page placeholder-page" data-page="export-build"><span class="panel-kicker">EXPORT / BUILD</span><h1>导出 / 构建</h1><div class="placeholder-grid"><div>导出 hotspots</div><div>导出 dialogue blocks</div><div>Ren’Py lint</div><div>构建结果</div></div></section>
+      <section id="export-tools" class="page placeholder-page" data-page="export-build">
+        <span class="panel-kicker">EXPORT / BUILD</span>
+        <h1>导出 / 构建</h1>
+        <p class="muted">正式导出按钮保留在顶部命令栏；此页作为 generated 文件、lint 和构建任务的集中面板。</p>
+        <div class="placeholder-grid export-grid">
+          <div><strong>Hotspots Export</strong><small>使用顶部“导出 Ren'Py 热区”按钮，导出前建议先执行 production check。</small></div>
+          <div><strong>Preflight Check</strong><small>target_label 检查、空 label、死链、禁用热区摘要。</small></div>
+          <div><strong>Ren’Py Lint</strong><small>预留 lint / build 调用结果槽位。</small></div>
+          <div><strong>Build Result</strong><small>预留构建日志、错误摘要和导出文件清单。</small></div>
+        </div>
+      </section>
       <section class="page placeholder-page" data-page="settings-logs"><span class="panel-kicker">SETTINGS / LOGS</span><h1>设置 / 日志</h1><div class="placeholder-grid"><div>项目路径设置</div><div>Git 设置</div><div>主题设置</div><div>安全规则查看</div></div></section>
     </main>
 

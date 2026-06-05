@@ -9,3 +9,6 @@
 .placeholder-grid div { min-height:120px; padding:14px; border:1px dashed var(--line); border-radius:16px; color:var(--muted); background:rgba(2,6,23,.35); }
 .production-check-mini { margin-top:16px; padding-top:14px; border-top:1px solid var(--line); }
 @media (max-width:900px){ .resource-grid,.placeholder-grid{grid-template-columns:1fr} }
+
+.export-grid strong { display:block; color:#e8f2ff; margin-bottom:8px; }
+.export-grid small { display:block; color:var(--muted); line-height:1.5; }
