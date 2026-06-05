@@ -15,6 +15,7 @@ from .git_status import read_git_status
 from .hotspot_manager import load_hotspots, save_hotspots
 from .models import (
     AssetScanResult,
+    ExportResult,
     GitStatus,
     HotspotDocument,
     ProjectOpenRequest,
@@ -22,6 +23,7 @@ from .models import (
     normalize_project_path,
 )
 from .project_scanner import scan_project_structure
+from .renpy_exporter import export_hotspots
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR / "frontend"
@@ -131,6 +133,17 @@ def post_hotspots_save(document: HotspotDocument) -> HotspotDocument:
     project_path = _require_project_path()
     try:
         return save_hotspots(project_path, document)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/export/hotspots", response_model=ExportResult)
+def post_export_hotspots() -> ExportResult:
+    """Export tools_data/hotspots.json to game/generated_hotspots.rpy."""
+
+    project_path = _require_project_path()
+    try:
+        return export_hotspots(project_path)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

@@ -91,6 +91,18 @@ class HotspotDocument(BaseModel):
     scenes: List[SceneHotspots] = Field(default_factory=list)
 
 
+class ExportResult(BaseModel):
+    """Result returned by Ren'Py export endpoints."""
+
+    ok: bool
+    output_path: str
+    screens: List[str] = Field(default_factory=list)
+    scene_count: int = 0
+    hotspot_count: int = 0
+    skipped_count: int = 0
+    message: str = ""
+
+
 def normalize_project_path(raw_path: str) -> Path:
     """Expand a user supplied path without creating or modifying it."""
 

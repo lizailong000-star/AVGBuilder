@@ -1,6 +1,6 @@
 # AVG Builder V0.2a
 
-AVG Builder 是一个本地 HTTP 工具，用于只读扫描本地 Ren'Py 项目结构、资源列表与 Git 状态，并支持背景预览、可视化矩形热区编辑与基础编辑工作流优化。V0.2a 增加撤销/重做、画布缩放、热区层级调整、复制自动偏移、选中定位和保存状态提示。
+AVG Builder 是一个本地 HTTP 工具，用于只读扫描本地 Ren'Py 项目结构、资源列表与 Git 状态，并支持背景预览、可视化矩形热区编辑、基础编辑工作流优化与 Ren'Py 热区导出。V0.2b 可以把 `tools_data/hotspots.json` 导出为 `game/generated_hotspots.rpy`，但不会修改 `script.rpy`、`gui.rpy`、`options.rpy`，也不会自动提交被管理项目。
 
 安全边界：V0.1b 保存热区时，只允许写入被管理项目的 `tools_data/hotspots.json`。它不会修改 `game/script.rpy`、`game/gui.rpy`、`game/options.rpy`，也不会修改 `game/images`、`game/gui`、`game/audio`，不会自动提交或推送被管理游戏项目。
 
@@ -41,6 +41,15 @@ AVG Builder 是一个本地 HTTP 工具，用于只读扫描本地 Ren'Py 项目
   - Delete 删除，Esc 取消选中
   - 保存状态显示 Saved / Unsaved / Saving / Save failed
   - 保存 `tools_data/hotspots.json`
+- V0.2b 导出功能：
+  - 点击“导出 Ren'Py 热区”调用 `POST /api/export/hotspots`
+  - 读取 `tools_data/hotspots.json`
+  - 写入 `game/generated_hotspots.rpy`
+  - 每个 scene 生成 `screen hotspots_<scene_id>()`
+  - 每个 enabled=true 的 hotspot 生成 `imagebutton`
+  - `target_label` 非空时使用 `Jump("target_label")`，为空时使用 `NullAction()`
+  - tooltip 以注释形式输出
+  - 不自动 include，不修改任何现有 `.rpy` 文件
 
 ## 项目结构
 
