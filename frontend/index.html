@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AVG Builder V0.2a</title>
+  <title>AVG Builder V0.5.1</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <span class="eyebrow">AVG Builder V0.2a</span>
-      <strong>可视化热区工作流优化</strong>
+      <span class="eyebrow">AVG Builder V0.5.1</span>
+      <strong>Production Control Panel</strong>
     </div>
     <form id="scan-form" class="top-form">
       <input id="project-path" type="text" value="D:\GitHub\DemoAVG" placeholder="D:\GitHub\DemoAVG" required />
@@ -29,6 +29,13 @@
 
   <main class="app-shell">
     <aside class="sidebar card">
+      <div class="panel-kicker">MODULES</div>
+      <nav class="module-nav" aria-label="AVGBuilder modules">
+        <a href="#scan-form" class="module-link active"><span>01</span>Project Scan</a>
+        <a href="#canvas-wrap" class="module-link"><span>02</span>Hotspot Editor</a>
+        <a href="#export-status" class="module-link"><span>03</span>Export Tools</a>
+        <a href="#production-check" class="module-link"><span>04</span>Production Check</a>
+      </nav>
       <h2>资源</h2>
       <div id="project-status" class="status-list empty">尚未扫描项目。</div>
       <div id="asset-tabs" class="asset-tabs"></div>
@@ -122,7 +129,7 @@
     </div>
   </section>
 
-  <section class="check-card card">
+  <section id="production-check" class="check-card card">
     <div class="check-header">
       <h2>热区生产检查</h2>
       <span id="check-summary" class="pill">尚未检查</span>
