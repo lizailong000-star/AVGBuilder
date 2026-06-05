@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AVG Builder V0.1a</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">AVG Builder V0.1a</p>
+      <h1>本地 Ren'Py 项目扫描台</h1>
+      <p class="subtitle">只读扫描项目结构、资源列表与 Git 状态，不修改任何外部项目文件。</p>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="card scan-card">
+      <h2>打开项目</h2>
+      <form id="scan-form" class="scan-form">
+        <label for="project-path">项目路径</label>
+        <div class="input-row">
+          <input
+            id="project-path"
+            name="project-path"
+            type="text"
+            placeholder="例如 D:\GitHub\DemoAVG"
+            autocomplete="off"
+            required
+          />
+          <button id="scan-button" type="submit">扫描</button>
+        </div>
+        <p class="hint">请输入 Ren'Py 项目根目录，后端将读取 game/、资源文件与 Git 状态。</p>
+      </form>
+    </section>
+
+    <section class="grid two-columns">
+      <article class="card">
+        <h2>项目状态</h2>
+        <div id="project-status" class="status-list empty">尚未扫描项目。</div>
+      </article>
+      <article class="card">
+        <h2>Git 状态</h2>
+        <div id="git-status" class="status-list empty">尚未读取 Git 状态。</div>
+      </article>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>资源分类</h2>
+        <span id="asset-count" class="pill">0 个资源</span>
+      </div>
+      <div id="asset-tabs" class="asset-tabs"></div>
+      <div id="asset-list" class="asset-list empty">尚未扫描资源。</div>
+    </section>
+
+    <section class="card">
+      <h2>扫描日志</h2>
+      <pre id="scan-log" class="scan-log">等待扫描...</pre>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
