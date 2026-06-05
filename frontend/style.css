@@ -747,3 +747,12 @@ button:disabled { opacity: .42; box-shadow: none; }
 .asset-subline em { font-size: 11px; line-height: 1.2; }
 .asset-open { width: 54px; min-width: 54px; padding: 7px 0; text-align: center; justify-content: center; }
 .asset-list { gap: 11px; }
+
+/* Hotspot asset cards: whole-card selection, no Open button */
+.asset-row.asset-card { grid-template-columns: 56px minmax(0, 1fr); cursor: pointer; }
+.asset-row.asset-card::after { content: "›"; color: rgba(103,232,249,.55); font-size: 20px; font-weight: 900; justify-self: end; align-self: center; grid-column: 2; grid-row: 1; }
+.asset-row.asset-card .asset-meta { padding-right: 22px; }
+.asset-open { display: none; }
+.asset-row.asset-card:not([data-bg]) { cursor: default; }
+.asset-row.asset-card:not([data-bg])::after { content: none; }
+.asset-row.asset-card:not([data-bg]) .asset-meta { padding-right: 2px; }
