@@ -1,6 +1,8 @@
-﻿# AVG Builder V0.1a
+# AVG Builder V0.1b
 
-AVG Builder V0.1a 是一个本地 HTTP 工具，用于只读扫描本地 Ren'Py 项目结构、资源列表与 Git 状态。它面向工具项目 `AVGBuilder`，不会修改被扫描的外部项目文件，也不会执行自动 commit、push、导出或热区编辑。
+AVG Builder 是一个本地 HTTP 工具，用于只读扫描本地 Ren'Py 项目结构、资源列表与 Git 状态，并在 V0.1b 中支持背景预览与手填热区 JSON 编辑。
+
+安全边界：V0.1b 保存热区时，只允许写入被管理项目的 `tools_data/hotspots.json`。它不会修改 `game/script.rpy`、`game/gui.rpy`、`game/options.rpy`，也不会修改 `game/images`、`game/gui`、`game/audio`，不会自动提交或推送被管理游戏项目。
 
 ## 功能范围
 
@@ -25,6 +27,11 @@ AVG Builder V0.1a 是一个本地 HTTP 工具，用于只读扫描本地 Ren'Py 
   - 工作区是否 clean
   - `git status --short`
   - 最新 commit
+- V0.1b 热区功能：
+  - 点击背景资源后预览背景图
+  - 手填热区 `id/name/target_label/tooltip/x/y/w/h/enabled`
+  - 按背景组织场景热区
+  - 保存 `tools_data/hotspots.json`
 
 ## 项目结构
 
@@ -35,6 +42,7 @@ AVGBuilder/
 │  ├─ app.py
 │  ├─ project_scanner.py
 │  ├─ asset_scanner.py
+│  ├─ hotspot_manager.py
 │  ├─ git_status.py
 │  └─ models.py
 ├─ frontend/
@@ -74,26 +82,80 @@ curl -X POST http://127.0.0.1:8000/api/project/open \
   -d '{"path":"D:\\GitHub\\DemoAVG"}'
 ```
 
-### 2. 查看资源列表
+### 2. 预览资源文件
+
+先扫描项目，再请求项目相对路径：
+
+```bash
+curl "http://127.0.0.1:8000/api/assets/file?path=game/images/bg/bg_room_rainy.png"
+```
+
+### 3. 查看/保存热区 JSON
+
+```bash
+curl http://127.0.0.1:8000/api/hotspots
+```
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/hotspots/save \
+  -H "Content-Type: application/json" \
+  -d '{"version":"0.1b","project_name":"DemoAVG","scenes":[]}'
+```
+
+保存目标固定为：
+
+```text
+<被扫描项目>/tools_data/hotspots.json
+```
+
+### 4. 查看资源列表
 
 ```bash
 curl http://127.0.0.1:8000/api/assets/list
 ```
 
-### 3. 查看 Git 状态
+### 5. 查看 Git 状态
 
 ```bash
 curl http://127.0.0.1:8000/api/git/status
 ```
 
-### 4. 查看项目摘要
+### 6. 查看项目摘要
 
 ```bash
 curl http://127.0.0.1:8000/api/project/summary
 ```
 
-> `GET /api/assets/list`、`GET /api/git/status`、`GET /api/project/summary` 返回最近一次 `POST /api/project/open` 的扫描结果；如果尚未扫描，会返回 404。
+> `GET /api/assets/list`、`GET /api/git/status`、`GET /api/project/summary`、`GET /api/hotspots` 返回最近一次 `POST /api/project/open` 的扫描上下文；如果尚未扫描，会返回 404。
 
-## 只读说明
+## hotspots.json 数据结构
 
-后端只读取目标项目路径下的目录、文件元数据与 Git 状态命令输出。它不会在目标项目中创建、修改或删除文件，也不会执行 `git add`、`git commit`、`git push` 等写入类操作。
+```json
+{
+  "version": "0.1b",
+  "project_name": "DemoAVG",
+  "scenes": [
+    {
+      "scene_id": "scene_bg_room_rainy",
+      "background": "game/images/bg/bg_room_rainy.png",
+      "hotspots": [
+        {
+          "id": "security_room",
+          "name": "监控室",
+          "target_label": "test_security_room",
+          "tooltip": "去监控室",
+          "x": 320,
+          "y": 180,
+          "w": 240,
+          "h": 160,
+          "enabled": true
+        }
+      ]
+    }
+  ]
+}
+```
+
+## 只读/受限写入说明
+
+项目扫描、资源预览和 Git 状态读取均为只读。V0.1b 唯一写入动作是 `POST /api/hotspots/save`，且后端固定只写入当前扫描项目的 `tools_data/hotspots.json`。

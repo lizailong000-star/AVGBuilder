@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AVG Builder V0.1a</title>
+  <title>AVG Builder V0.1b</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
   <header class="hero">
     <div>
-      <p class="eyebrow">AVG Builder V0.1a</p>
-      <h1>本地 Ren'Py 项目扫描台</h1>
-      <p class="subtitle">只读扫描项目结构、资源列表与 Git 状态，不修改任何外部项目文件。</p>
+      <p class="eyebrow">AVG Builder V0.1b</p>
+      <h1>本地 Ren'Py 项目扫描与热区编辑</h1>
+      <p class="subtitle">扫描项目结构、预览背景图、手填热区数据，并只写入 tools_data/hotspots.json。</p>
     </div>
   </header>
 
@@ -25,13 +25,14 @@
             id="project-path"
             name="project-path"
             type="text"
+            value="D:\GitHub\DemoAVG"
             placeholder="例如 D:\GitHub\DemoAVG"
             autocomplete="off"
             required
           />
           <button id="scan-button" type="submit">扫描</button>
         </div>
-        <p class="hint">请输入 Ren'Py 项目根目录，后端将读取 game/、资源文件与 Git 状态。</p>
+        <p class="hint">V0.1b 只允许保存热区数据到项目 tools_data/hotspots.json，不修改 game/。</p>
       </form>
     </section>
 
@@ -53,6 +54,42 @@
       </div>
       <div id="asset-tabs" class="asset-tabs"></div>
       <div id="asset-list" class="asset-list empty">尚未扫描资源。</div>
+    </section>
+
+    <section class="grid editor-grid">
+      <article class="card preview-card">
+        <div class="section-title">
+          <h2>背景预览</h2>
+          <span id="selected-background" class="pill">未选择背景</span>
+        </div>
+        <div id="preview-wrap" class="preview-wrap empty">从资源分类里点击一个背景资源。</div>
+      </article>
+
+      <article class="card hotspot-card">
+        <div class="section-title">
+          <h2>热区 JSON 编辑</h2>
+          <button id="save-hotspots-button" type="button" disabled>保存 hotspots.json</button>
+        </div>
+        <div id="hotspot-list" class="hotspot-list empty">选择背景后可新增热区。</div>
+        <form id="hotspot-form" class="hotspot-form">
+          <input id="hotspot-index" type="hidden" value="-1" />
+          <div class="form-grid">
+            <label>ID<input id="hotspot-id" required placeholder="test_hotspot" /></label>
+            <label>名称<input id="hotspot-name" required placeholder="测试热区" /></label>
+            <label>目标 label<input id="hotspot-target" required placeholder="test_label" /></label>
+            <label>提示文本<input id="hotspot-tooltip" placeholder="测试提示" /></label>
+            <label>X<input id="hotspot-x" type="number" min="0" value="10" required /></label>
+            <label>Y<input id="hotspot-y" type="number" min="0" value="20" required /></label>
+            <label>W<input id="hotspot-w" type="number" min="1" value="100" required /></label>
+            <label>H<input id="hotspot-h" type="number" min="1" value="80" required /></label>
+            <label class="checkbox-label"><input id="hotspot-enabled" type="checkbox" checked /> enabled</label>
+          </div>
+          <div class="button-row">
+            <button id="new-hotspot-button" type="button" disabled>新增热区</button>
+            <button id="apply-hotspot-button" type="submit" disabled>应用到当前背景</button>
+          </div>
+        </form>
+      </article>
     </section>
 
     <section class="card">
