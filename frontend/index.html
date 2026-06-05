@@ -40,6 +40,7 @@
     </aside>
 
     <header id="top_bar" class="top-bar-v2">
+      <div id="project-scan" class="project-scan-shell">
       <form id="scan-form" class="project-command-bar">
         <label class="project-path-field">
           <span>PROJECT PATH</span>
@@ -51,6 +52,7 @@
         <button id="inspect-resources-button" type="button" disabled>检查资源</button>
         <button id="export-hotspots-button" type="button" disabled>导出 Ren'Py 热区</button>
       </form>
+      </div>
       <div class="top-status-v2">
         <div id="save-status" class="save-status saved">Saved</div>
         <div id="export-status" class="chip">Export：未导出</div>
@@ -105,7 +107,7 @@
         </div>
       </section>
 
-      <section class="page" data-page="hotspot-editor">
+      <section id="hotspot-editor" class="page" data-page="hotspot-editor">
         <div class="page-header compact">
           <div>
             <span class="panel-kicker">HOTSPOT EDITOR</span>
@@ -147,7 +149,7 @@
         </div>
       </section>
 
-      <section class="page" data-page="assets">
+      <section id="resource-manager" class="page" data-page="assets">
         <div class="page-header compact"><div><span class="panel-kicker">ASSETS</span><h1>资源管理器</h1><p>图片、角色、UI、音频资源检查。</p></div><span id="resource-summary" class="pill">尚未检查</span></div>
         <div id="resource-stats" class="resource-stats empty">点击“检查资源”查看资源统计。</div>
         <div class="assets-layout">
@@ -161,7 +163,7 @@
       <section class="page placeholder-page" data-page="ui-config"><span class="panel-kicker">UI CONFIG V0.8</span><h1>UI / 配置健康检查</h1><div class="placeholder-grid"><div>配置文件状态</div><div>字体检查</div><div>screens/gui/options</div><div>Ren’Py lint warnings</div></div></section>
       <section class="page placeholder-page" data-page="audio"><span class="panel-kicker">AUDIO V0.9</span><h1>声音管理器</h1><div class="placeholder-grid"><div>BGM</div><div>SFX</div><div>Ambience</div><div>Voice</div></div></section>
       <section class="page placeholder-page" data-page="ai-assistant"><span class="panel-kicker">AI ASSISTANT V1.1+</span><h1>AI 助手</h1><div class="placeholder-grid"><div>任务类型</div><div>上下文选择</div><div>输入区</div><div>输出区</div></div></section>
-      <section class="page placeholder-page" data-page="export-build"><span class="panel-kicker">EXPORT / BUILD</span><h1>导出 / 构建</h1><div class="placeholder-grid"><div>导出 hotspots</div><div>导出 dialogue blocks</div><div>Ren’Py lint</div><div>构建结果</div></div></</section>
+      <section id="export-tools" class="page placeholder-page" data-page="export-build"><span class="panel-kicker">EXPORT / BUILD</span><h1>导出 / 构建</h1><div class="placeholder-grid"><div>导出 hotspots</div><div>导出 dialogue blocks</div><div>Ren’Py lint</div><div>构建结果</div></div></section>
       <section class="page placeholder-page" data-page="settings-logs"><span class="panel-kicker">SETTINGS / LOGS</span><h1>设置 / 日志</h1><div class="placeholder-grid"><div>项目路径设置</div><div>Git 设置</div><div>主题设置</div><div>安全规则查看</div></div></section>
     </main>
 
@@ -201,7 +203,7 @@
           </div>
         </form>
         <p class="hint">空白处拖拽新建；拖动矩形移动；拖右下角控制点缩放；Ctrl+Z/Y 撤销/重做；Delete 删除。</p>
-        <div class="production-check-mini">
+        <div id="production-check" class="production-check-mini">
           <h2>target_label 检查结果</h2>
           <span id="check-summary" class="pill">尚未检查</span>
           <div id="check-list" class="check-list empty">点击“检查 target_label”查看死链、空 label 和命名建议。</div>

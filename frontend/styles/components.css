@@ -20,3 +20,16 @@
 .inspector-block.hidden { display:none; }
 .inspector-note,.ai-suggestion { color:var(--muted); line-height:1.5; padding:10px; border:1px dashed var(--line); border-radius:14px; background:rgba(2,6,23,.35); }
 .bottom-log-header { display:flex; justify-content:space-between; color:var(--muted); font-size:.72rem; font-weight:900; letter-spacing:.12em; margin-bottom:6px; }
+
+/* V0.5.1 refined official panel hooks */
+.project-scan-shell { min-width: 0; }
+.project-command-bar { padding: 6px; border: 1px solid var(--line); border-radius: 18px; background: rgba(5, 13, 27, .62); box-shadow: inset 0 1px 0 rgba(255,255,255,.04); }
+.primary-nav-item[data-route="dashboard"]::after,
+.primary-nav-item[data-route="hotspot-editor"]::after,
+.primary-nav-item[data-route="assets"]::after,
+.primary-nav-item[data-route="export-build"]::after { content: ""; margin-left: auto; width: 6px; height: 6px; border-radius: 50%; background: rgba(103,232,249,.85); box-shadow: 0 0 14px rgba(103,232,249,.55); }
+.page-header { padding: 14px; border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(135deg, rgba(56,189,248,.10), rgba(139,92,246,.08)); }
+.metric-card, .quick-card, .card-lite, .inspector-block { backdrop-filter: blur(14px); }
+.quick-card:hover { transform: translateY(-1px); border-color: rgba(56,189,248,.52); box-shadow: 0 0 30px rgba(56,189,248,.14); }
+#production-check { border-top: 1px solid var(--line-strong); }
+#export-tools .placeholder-grid div, #resource-manager .card-lite, #hotspot-editor .card-lite { box-shadow: inset 0 1px 0 rgba(255,255,255,.04); }
