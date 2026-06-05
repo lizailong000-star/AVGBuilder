@@ -734,3 +734,16 @@ button:disabled { opacity: .42; box-shadow: none; }
 .asset-subline em { color: #8ea4bf; font-size: .72rem; font-style: normal; }
 .asset-open { padding: 7px 10px; border-radius: 11px; font-size: .74rem; }
 @media (max-width: 1280px) { .asset-list { max-height: 460px; } }
+
+/* Hotspot asset list readability pass */
+.asset-row.asset-card { grid-template-columns: 56px minmax(0, 1fr) 54px; gap: 12px; min-height: 82px; padding: 11px; }
+.asset-row.asset-card:not(:has(.asset-open)) { grid-template-columns: 56px minmax(0, 1fr); }
+.asset-thumb { width: 56px; height: 56px; }
+.asset-meta { min-width: 0; gap: 5px; padding-right: 2px; }
+.asset-meta strong { font-size: 13px; font-weight: 800; line-height: 1.35; letter-spacing: .01em; }
+.asset-meta small { font-size: 11px; line-height: 1.45; max-width: 100%; }
+.asset-subline { gap: 7px; flex-wrap: wrap; }
+.asset-subline span { font-size: 10px; line-height: 1; padding: 4px 7px; }
+.asset-subline em { font-size: 11px; line-height: 1.2; }
+.asset-open { width: 54px; min-width: 54px; padding: 7px 0; text-align: center; justify-content: center; }
+.asset-list { gap: 11px; }
