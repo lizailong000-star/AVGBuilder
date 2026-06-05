@@ -66,6 +66,12 @@ AVG Builder 是一个本地 HTTP 工具，用于只读扫描本地 Ren'Py 项目
   - Resource Manager 页面提供资源统计卡、类型筛选、资源列表、命名 warning、缺失引用、未使用资源、资源详情与图片预览
   - 图片预览统一走 `/api/assets/file`
   - 只读扫描，不移动、不删除、不重命名、不自动修复 DemoAVG 资源
+- V0.10 AI Gateway 预留层：
+  - `GET /api/ai/capabilities` 返回 mock 能力列表和 provider 状态
+  - `POST /api/ai/text` / `POST /api/ai/json` / `POST /api/ai/moderate` 返回结构化 mock 数据
+  - `POST /api/ai/task/submit`、`GET /api/ai/task/status`、`GET /api/ai/task/result` 预留异步 AI 任务接口
+  - 前端 AI 助手页面提供任务类型、输入文本、上下文 JSON、Text/JSON/Moderate/Async Mock 按钮和结果输出
+  - 不安装 OpenAI SDK，不读取 API Key，不调用外部 AI，不产生付费 API 使用
 - V0.6 Label / 剧情节点管理器：
   - `GET /api/labels/graph` 返回 label、jump/call 边、死链、可能未使用 label
   - `GET /api/labels/detail?name=xxx` 返回单个 label 的入边、出边、关联热区

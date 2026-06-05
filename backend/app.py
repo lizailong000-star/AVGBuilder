@@ -35,6 +35,7 @@ from .models import (
     normalize_project_path,
 )
 from .project_scanner import scan_project_structure
+from .ai.routes import router as ai_router
 from .renpy_exporter import export_hotspots
 from .resource_inspector import inspect_resources
 from .script_graph import build_label_graph, get_label_detail, get_label_health
@@ -44,6 +45,7 @@ FRONTEND_DIR = BASE_DIR / "frontend"
 
 app = FastAPI(title="AVG Builder", version="0.1b")
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+app.include_router(ai_router)
 
 _current_summary: Optional[ProjectSummary] = None
 _current_project_path: Optional[Path] = None
