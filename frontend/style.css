@@ -691,3 +691,24 @@ button:disabled { opacity: .42; box-shadow: none; }
 .label-fix-suggestions h3 { margin: 0; color: #fef3c7; }
 .label-fix-suggestions p { margin: 0; padding: 10px; border: 1px solid var(--line); border-left: 5px solid var(--warn); border-radius: 12px; background: rgba(2,6,23,.34); color: var(--muted); line-height: 1.5; }
 #label-graph-visible-count { display: inline-flex; align-items: center; min-width: 130px; justify-content: center; }
+
+/* Label graph page UI/UX refinement */
+.label-page-hero { background: linear-gradient(135deg, rgba(56,189,248,.14), rgba(139,92,246,.10) 55%, rgba(52,211,153,.08)); }
+.label-toolbar { position: relative; border-color: rgba(103,232,249,.24); background: linear-gradient(180deg, rgba(12,26,50,.88), rgba(5,13,27,.76)); }
+.label-category-filters { padding: 8px; border: 1px solid rgba(108,139,178,.20); border-radius: 16px; background: rgba(2,6,23,.24); }
+.filter-caption { display: inline-flex; align-items: center; margin-right: 6px; padding: 4px 9px; border-radius: 999px; background: rgba(103,232,249,.10); color: #67e8f9; font-size: .76rem; font-weight: 900; letter-spacing: .08em; }
+.label-filter { min-height: 32px; }
+.label-manager-layout { align-items: stretch; }
+.label-list-panel, .label-graph-panel { min-height: 680px; }
+.label-list-panel h2, .label-graph-panel h2, .label-bottom-panels h2 { display: flex; align-items: center; gap: 8px; }
+.label-list-panel h2::before, .label-graph-panel h2::before, .label-bottom-panels h2::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #67e8f9; box-shadow: 0 0 14px rgba(103,232,249,.65); }
+.graph-toolbar { padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.graph-toolbar .pill { background: rgba(56,189,248,.10); color: #b7e9ff; }
+.label-graph-canvas { position: relative; margin-top: 12px; box-shadow: inset 0 0 60px rgba(0,0,0,.34); }
+.graph-canvas-hint { position: absolute; left: 14px; top: 12px; z-index: 2; padding: 5px 10px; border: 1px solid rgba(108,139,178,.24); border-radius: 999px; background: rgba(2,6,23,.58); color: var(--muted); font-size: .78rem; pointer-events: none; }
+#label-graph-svg { position: relative; z-index: 1; }
+.label-edge-list, .label-issue-list, .label-list { scrollbar-gutter: stable; }
+.label-detail-title { border-bottom-color: rgba(103,232,249,.22); }
+.label-fix-suggestions { padding-top: 4px; }
+.label-fix-suggestions.empty { color: var(--muted); }
+@media (max-width: 1280px) { .label-list-panel, .label-graph-panel { min-height: auto; } .graph-toolbar { align-items: flex-start; flex-direction: column; } }
