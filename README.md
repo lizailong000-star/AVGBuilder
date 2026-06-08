@@ -120,6 +120,83 @@ uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload
 http://127.0.0.1:8000
 ```
 
+
+## Local Dev Scripts
+
+These PowerShell scripts live in the AVGBuilder repository root. They are for local development convenience. `status_all.ps1` and `check_all.ps1` only read the Git status of `D:\GitHub\DemoAVG`; they do not modify DemoAVG.
+
+### Start local server
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/start_dev.ps1
+```
+
+Default URL:
+
+```text
+http://127.0.0.1:8000
+```
+
+Options:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/start_dev.ps1 -Port 8001
+powershell -ExecutionPolicy Bypass -File scripts/start_dev.ps1 -NoReload
+```
+
+If `.venv` exists, the script uses `.venv\Scripts\python.exe`; otherwise it uses `python` from PATH. If `uvicorn` is missing, it runs `pip install -r requirements.txt`.
+
+### Check backend and frontend
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check_all.ps1
+```
+
+Checks:
+
+- `python -m compileall backend`
+- `node --check frontend/app.js`
+- `git status --short` for AVGBuilder
+- read-only `git status --short` for `D:\GitHub\DemoAVG`
+- default HTTP probe: `GET /api/ai/capabilities`
+
+Skip the HTTP probe when the dev server is not running:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check_all.ps1 -SkipServerProbe
+```
+
+### Show both repository statuses
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/status_all.ps1
+```
+
+Prints branch, latest commit, and `git status --short` for AVGBuilder and DemoAVG. DemoAVG is read-only: no commit, reset, clean, or file write.
+
+### Safe push for AVGBuilder
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/push_safe.ps1
+```
+
+Behavior:
+
+- pushes AVGBuilder only
+- requires AVGBuilder working tree to be clean before push
+- displays DemoAVG status as a read-only guard
+- requires typing `PUSH` by default
+
+Common usage:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/push_safe.ps1 -RunChecks -SkipServerProbe
+powershell -ExecutionPolicy Bypass -File scripts/push_safe.ps1 -Remote origin -Branch main
+powershell -ExecutionPolicy Bypass -File scripts/push_safe.ps1 -Yes
+```
+
+> `push_safe.ps1` does not run `git add`, `git commit`, `git reset`, or `git clean`, and never pushes DemoAVG.
+
 ## API 测试
 
 ### 1. 扫描项目
