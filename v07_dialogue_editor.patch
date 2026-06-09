@@ -1,0 +1,2674 @@
+From 983a9c0e0c95929cc7db40137cacb6efa043226f Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Tue, 9 Jun 2026 01:08:19 +0000
+Subject: [PATCH] Add AVG Builder: FastAPI backend, static frontend, dialogue
+ block editor
+
+### Motivation
+
+- Provide a local read-only tool to scan Ren'Py projects for structure, assets and Git status and to edit/export Dialogue blocks without modifying the target project.
+- Ship a self-contained developer experience (backend API + native static frontend) to interactively inspect projects and manage generated dialogue exports.
+
+### Description
+
+- Add a FastAPI backend (`backend/app.py`) with endpoints to open/scan projects, list assets, read Git status, and manage Dialogue block documents and export (`/api/project/open`, `/api/assets/list`, `/api/git/status`, `/api/dialogue/*`).
+- Introduce Pydantic models (`backend/models.py`) and read-only helpers: project scanner (`backend/project_scanner.py`), asset scanner (`backend/asset_scanner.py`), and Git status reader (`backend/git_status.py`).
+- Implement Dialogue document read/save/validate/export logic in `backend/dialogue_manager.py` that persists `tools_data/dialogue_blocks.json` and writes `game/generated_dialogue_blocks.rpy` when exporting.
+- Add a native static frontend (`frontend/index.html`, `frontend/app.js`, `frontend/style.css`) to drive the API, plus dev scripts (`scripts/*.ps1`), `requirements.txt`, `.gitignore`, and an expanded `README.md` documenting usage and safety boundaries.
+
+### Testing
+
+- Ran Python compilation check: `python -m compileall backend`, which completed successfully.
+- Validated frontend JS syntax with `node --check frontend/app.js`, which passed without errors.
+- Performed git whitespace check with `git diff --check`, which reported no issues.
+---
+ .gitignore                  |  16 +
+ README.md                   | 377 +++++++++++++++++++++-
+ backend/__init__.py         |   0
+ backend/app.py              | 175 ++++++++++
+ backend/asset_scanner.py    |  76 +++++
+ backend/dialogue_manager.py | 171 ++++++++++
+ backend/git_status.py       |  56 ++++
+ backend/models.py           | 134 ++++++++
+ backend/project_scanner.py  |  38 +++
+ data/.gitkeep               |   0
+ frontend/app.js             | 613 ++++++++++++++++++++++++++++++++++++
+ frontend/index.html         | 142 +++++++++
+ frontend/style.css          | 518 ++++++++++++++++++++++++++++++
+ requirements.txt            |   3 +
+ scripts/check_all.ps1       |  44 +++
+ scripts/push_safe.ps1       |  48 +++
+ scripts/start_dev.ps1       |  45 +++
+ scripts/status_all.ps1      |  52 +++
+ 18 files changed, 2507 insertions(+), 1 deletion(-)
+ create mode 100644 .gitignore
+ create mode 100644 backend/__init__.py
+ create mode 100644 backend/app.py
+ create mode 100644 backend/asset_scanner.py
+ create mode 100644 backend/dialogue_manager.py
+ create mode 100644 backend/git_status.py
+ create mode 100644 backend/models.py
+ create mode 100644 backend/project_scanner.py
+ create mode 100644 data/.gitkeep
+ create mode 100644 frontend/app.js
+ create mode 100644 frontend/index.html
+ create mode 100644 frontend/style.css
+ create mode 100644 requirements.txt
+ create mode 100755 scripts/check_all.ps1
+ create mode 100755 scripts/push_safe.ps1
+ create mode 100755 scripts/start_dev.ps1
+ create mode 100755 scripts/status_all.ps1
+
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..5bbc62b
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,16 @@
++# Python
++__pycache__/
++*.py[cod]
++.venv/
++venv/
++.env
++
++# Local data/cache
++data/*
++!data/.gitkeep
++
++# Editor / OS
++.DS_Store
++Thumbs.db
++.vscode/
++.idea/
+diff --git a/README.md b/README.md
+index b77c1ee..fd014a3 100644
+--- a/README.md
++++ b/README.md
+@@ -1 +1,376 @@
+-# AVGBuilder
+\ No newline at end of file
++# AVG Builder V0.1a
++
++AVG Builder V0.1a 是一个本地 HTTP 工具，用于只读扫描本地 Ren'Py 项目结构、资源列表与 Git 状态。它面向工具项目 `AVGBuilder`，不会修改被扫描的外部项目文件，也不会执行自动 commit、push、导出或热区编辑。
++
++## 功能范围
++
++- FastAPI 后端 + 原生 HTML/CSS/JS 前端。
++- 首页：`http://127.0.0.1:8000`。
++- 输入 Ren'Py 项目根路径，例如：`D:\GitHub\DemoAVG`。
++- 点击扫描后调用 `POST /api/project/open`。
++- 项目结构检查：
++  - `game/`
++  - `game/script.rpy`
++  - `game/gui.rpy`
++  - `game/options.rpy`
++  - `.gitignore`
++- 资源分类扫描：
++  - `backgrounds`
++  - `characters`
++  - `ui`
++  - `audio`
++- Git 状态读取：
++  - 是否 Git 仓库
++  - 当前分支
++  - 工作区是否 clean
++  - `git status --short`
++  - 最新 commit
++
++## 项目结构
++
++```text
++AVGBuilder/
++├─ backend/
++│  ├─ app.py
++│  ├─ project_scanner.py
++│  ├─ asset_scanner.py
++│  ├─ git_status.py
++│  └─ models.py
++├─ frontend/
++│  ├─ index.html
++│  ├─ app.js
++│  └─ style.css
++├─ data/
++├─ scripts/
++│  ├─ start_dev.ps1
++│  ├─ check_all.ps1
++│  ├─ status_all.ps1
++│  └─ push_safe.ps1
++├─ README.md
++├─ requirements.txt
++└─ .gitignore
++```
++
++## 安装与启动
++
++建议使用 Python 3.10+。
++
++```bash
++python -m venv .venv
++source .venv/bin/activate  # Windows PowerShell: .venv\Scripts\Activate.ps1
++pip install -r requirements.txt
++uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload
++```
++
++启动后访问：
++
++```text
++http://127.0.0.1:8000
++```
++
++## 本地开发脚本（PowerShell）
++
++以下脚本都只在 `AVGBuilder` 仓库内工作，不会修改 `DemoAVG`。如果 PowerShell 执行策略阻止脚本运行，可先在当前终端使用：
++
++```powershell
++Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
++```
++
++### 1. 启动本地服务
++
++```powershell
++powershell -ExecutionPolicy Bypass -File scripts/start_dev.ps1
++```
++
++默认行为：
++
++- 在 AVGBuilder 内创建/复用 `.venv`。
++- 安装 `requirements.txt`。
++- 启动 `uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload`。
++- 打开 `http://127.0.0.1:8000` 访问首页。
++
++可选参数：
++
++```powershell
++powershell -ExecutionPolicy Bypass -File scripts/start_dev.ps1 -Port 8001
++powershell -ExecutionPolicy Bypass -File scripts/start_dev.ps1 -SkipInstall
++powershell -ExecutionPolicy Bypass -File scripts/start_dev.ps1 -NoReload
++```
++
++### 2. 检查前后端
++
++```powershell
++powershell -ExecutionPolicy Bypass -File scripts/check_all.ps1
++```
++
++检查内容：
++
++- `python -m compileall backend`
++- `node --check frontend/app.js`
++- `git diff --check`
++
++如果想使用本仓库 `.venv` 中的 Python：
++
++```powershell
++powershell -ExecutionPolicy Bypass -File scripts/check_all.ps1 -UseVenv
++```
++
++### 3. 查看 AVGBuilder 与 DemoAVG 状态
++
++```powershell
++powershell -ExecutionPolicy Bypass -File scripts/status_all.ps1
++```
++
++默认会检查：
++
++- 当前 `AVGBuilder` 仓库。
++- 与 `AVGBuilder` 同级目录下的 `DemoAVG` 仓库（只读 `git status` / branch / latest commit）。
++
++如果 `DemoAVG` 不在同级目录，可指定路径：
++
++```powershell
++powershell -ExecutionPolicy Bypass -File scripts/status_all.ps1 -DemoAVGPath "D:\GitHub\DemoAVG"
++```
++
++### 4. 安全推送当前分支
++
++```powershell
++powershell -ExecutionPolicy Bypass -File scripts/push_safe.ps1
++```
++
++默认安全规则：
++
++- 只推送 AVGBuilder 当前分支。
++- 工作区必须干净。
++- 推送前运行 `scripts/check_all.ps1`。
++- 拒绝直接推送 `main` / `master`，避免误推主分支。
++
++如果确实需要推送 `main`，必须显式确认：
++
++```powershell
++powershell -ExecutionPolicy Bypass -File scripts/push_safe.ps1 -AllowMain
++```
++
++也可以指定远端或分支：
++
++```powershell
++powershell -ExecutionPolicy Bypass -File scripts/push_safe.ps1 -Remote origin -Branch feature/my-work
++```
++
++## API 测试
++
++### 1. 扫描项目
++
++```bash
++curl -X POST http://127.0.0.1:8000/api/project/open \
++  -H "Content-Type: application/json" \
++  -d '{"path":"D:\\GitHub\\DemoAVG"}'
++```
++
++Linux/macOS 示例：
++
++```bash
++curl -X POST http://127.0.0.1:8000/api/project/open \
++  -H "Content-Type: application/json" \
++  -d '{"path":"/path/to/DemoAVG"}'
++```
++
++### 2. 查看资源列表
++
++```bash
++curl http://127.0.0.1:8000/api/assets/list
++```
++
++### 3. 查看 Git 状态
++
++```bash
++curl http://127.0.0.1:8000/api/git/status
++```
++
++### 4. 查看项目摘要
++
++```bash
++curl http://127.0.0.1:8000/api/project/summary
++```
++
++> `GET /api/assets/list`、`GET /api/git/status`、`GET /api/project/summary` 返回最近一次 `POST /api/project/open` 的扫描结果；如果尚未扫描，会返回 404。
++
++## 只读说明
++
++后端只读取目标项目路径下的目录、文件元数据与 Git 状态命令输出。它不会在目标项目中创建、修改或删除文件，也不会执行 `git add`、`git commit`、`git push` 等写入类操作。
++
++## Codex Linux 容器验证标准
++
++Codex 在 Linux 容器中运行时只执行与容器环境匹配的静态检查，不把 Windows-only 或本地-only 验证视为失败。
++
++必须执行的检查：
++
++```bash
++python -m compileall backend
++node --check frontend/app.js
++git diff --check
++```
++
++如果任务修改 README，需要确认 README 已包含对应新增用法说明。如果任务修改或新增 `scripts/*.ps1`，Codex 只检查以下文件是否存在，并确认 README 写明调用方式：
++
++- `scripts/start_dev.ps1`
++- `scripts/check_all.ps1`
++- `scripts/status_all.ps1`
++- `scripts/push_safe.ps1`
++
++Codex 不需要在 Linux 容器中执行以下 Windows 本地验证，也不要把这些验证缺失或路径不存在计为失败：
++
++- 实际运行 `powershell -ExecutionPolicy Bypass -File scripts/*.ps1`
++- 检查 `D:\GitHub\AVGBuilder` 或 `D:\GitHub\DemoAVG`
++- 因 `/workspace/DemoAVG` 不存在而失败
++- 实际启动 Windows 本地服务或浏览器访问 `http://127.0.0.1:8000`
++- 要求 `git push origin main` 成功
++
++Windows 本地验证由用户在本机执行：
++
++```powershell
++powershell -ExecutionPolicy Bypass -File scripts/status_all.ps1
++powershell -ExecutionPolicy Bypass -File scripts/check_all.ps1
++powershell -ExecutionPolicy Bypass -File scripts/start_dev.ps1
++powershell -ExecutionPolicy Bypass -File scripts/push_safe.ps1
++```
++
++## Dialogue Block Editor V0.7
++
++AVG Builder V0.7 增加 Dialogue / 对话块编辑器，用于在本地创建、编辑、校验和导出 AVG 剧情对白块。该功能继续保持 FastAPI + 原生 HTML/CSS/JS，不调用真实 AI API，不要求 API Key。
++
++### dialogue_blocks.json
++
++对话块编辑器会把编辑数据保存到被扫描项目的：
++
++```text
++tools_data/dialogue_blocks.json
++```
++
++文件结构示例：
++
++```json
++{
++  "version": "0.7",
++  "project_name": "DemoAVG",
++  "blocks": [
++    {
++      "id": "block_001",
++      "label": "dialogue_block_001",
++      "title": "雨夜房间测试对白",
++      "background": "bg_room_rainy",
++      "music": "",
++      "lines": [
++        { "type": "narration", "speaker": "", "text": "雨还在下。" },
++        { "type": "dialogue", "speaker": "n", "text": "这个点，谁还会来？" }
++      ],
++      "return_label": "",
++      "enabled": true
++    }
++  ]
++}
++```
++
++字段说明：
++
++- `id`：AVGBuilder 工具内部 ID。
++- `label`：导出的 Ren'Py label 名，必须符合 `^[A-Za-z_][A-Za-z0-9_]*$`。
++- `title`：用户可读标题。
++- `background`：Ren'Py `scene` 使用的背景名，不是文件路径。
++- `music`：可空；填写后导出 `play music "..."`。
++- `lines`：对白行数组，`type` 支持 `narration`、`dialogue`、`comment`。
++- `speaker`：Ren'Py 角色变量名，例如 `n`、`l`、`narrator`，旁白可空。
++- `text`：正文；空文本会产生 warning。
++- `return_label`：可空；填写后导出结尾使用 `jump return_label`，否则使用 `return`。
++- `enabled`：为 `false` 的 block 不会导出。
++
++### generated_dialogue_blocks.rpy
++
++点击“导出 RPY”会生成：
++
++```text
++game/generated_dialogue_blocks.rpy
++```
++
++导出文件顶部包含注释：
++
++```renpy
++# This file is generated by AVGBuilder. Do not edit manually.
++```
++
++导出示例：
++
++```renpy
++label dialogue_block_001:
++
++    scene bg_room_rainy
++
++    "雨还在下。"
++
++    n "这个点，谁还会来？"
++
++    return
++```
++
++如果 `return_label` 设置为 `test_generated_hotspots`，末尾会导出：
++
++```renpy
++    jump test_generated_hotspots
++```
++
++`comment` 行不会导出为对白，而是导出为 Ren'Py 注释：
++
++```renpy
++    # comment text
++```
++
++### 手动在 Ren'Py 中调用
++
++AVGBuilder 不会直接修改 `script.rpy`、`gui.rpy` 或 `options.rpy`。如果需要在 Ren'Py 剧情中使用生成的对话块，请在你的游戏脚本中手动调用：
++
++```renpy
++jump dialogue_block_001
++```
++
++或：
++
++```renpy
++call dialogue_block_001
++```
++
++### Dialogue API
++
++在前端先扫描目标 Ren'Py 项目后，可以使用以下 API：
++
++```bash
++curl http://127.0.0.1:8000/api/dialogue/blocks
++```
++
++```bash
++curl -X POST http://127.0.0.1:8000/api/dialogue/blocks/validate \
++  -H "Content-Type: application/json" \
++  -d '{"document":{"version":"0.7","project_name":"DemoAVG","blocks":[]}}'
++```
++
++```bash
++curl -X POST http://127.0.0.1:8000/api/dialogue/blocks/save \
++  -H "Content-Type: application/json" \
++  -d '{"document":{"version":"0.7","project_name":"DemoAVG","blocks":[]}}'
++```
++
++```bash
++curl -X POST http://127.0.0.1:8000/api/dialogue/export \
++  -H "Content-Type: application/json" \
++  -d '{"document":{"version":"0.7","project_name":"DemoAVG","blocks":[]}}'
++```
++
++### V0.7 安全边界
++
++- 只修改 AVGBuilder 仓库代码。
++- 不直接修改 DemoAVG 的 `script.rpy`、`gui.rpy`、`options.rpy`。
++- 不移动、不删除、不重命名 DemoAVG 资源。
++- 不自动修改已有 `generated_hotspots.rpy`。
++- 不调用真实 AI API，也不要求 API Key。
++- 对被管理项目的写入仅限用户主动点击保存/导出时写入：
++  - `tools_data/dialogue_blocks.json`
++  - `game/generated_dialogue_blocks.rpy`
+diff --git a/backend/__init__.py b/backend/__init__.py
+new file mode 100644
+index 0000000..e69de29
+diff --git a/backend/app.py b/backend/app.py
+new file mode 100644
+index 0000000..b29c9af
+--- /dev/null
++++ b/backend/app.py
+@@ -0,0 +1,175 @@
++"""AVG Builder V0.1a FastAPI application."""
++
++from __future__ import annotations
++
++from pathlib import Path
++from typing import Optional
++
++from fastapi import Body, FastAPI, HTTPException
++from fastapi.responses import FileResponse
++from fastapi.staticfiles import StaticFiles
++
++from .asset_scanner import scan_assets
++from .dialogue_manager import (
++    default_dialogue_document,
++    export_dialogue_blocks,
++    read_dialogue_document,
++    save_dialogue_document,
++    validate_dialogue_document,
++)
++from .git_status import read_git_status
++from .models import (
++    AssetScanResult,
++    DialogueBlocksResponse,
++    DialogueDocumentRequest,
++    DialogueExportResponse,
++    DialogueSaveResponse,
++    DialogueValidationResponse,
++    GitStatus,
++    ProjectOpenRequest,
++    ProjectSummary,
++    normalize_project_path,
++)
++from .project_scanner import scan_project_structure
++
++BASE_DIR = Path(__file__).resolve().parent.parent
++FRONTEND_DIR = BASE_DIR / "frontend"
++
++app = FastAPI(title="AVG Builder", version="0.1a")
++app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
++
++_current_summary: Optional[ProjectSummary] = None
++
++
++@app.get("/")
++def index() -> FileResponse:
++    """Serve the native HTML/CSS/JS frontend."""
++
++    return FileResponse(FRONTEND_DIR / "index.html")
++
++
++@app.post("/api/project/open", response_model=ProjectSummary)
++def open_project(request: ProjectOpenRequest) -> ProjectSummary:
++    """Scan a local Ren'Py project path and cache the read-only result."""
++
++    global _current_summary
++    project_path = normalize_project_path(request.path)
++    checks, structure_logs = scan_project_structure(project_path)
++    assets = scan_assets(project_path)
++    git = read_git_status(project_path)
++    logs = [*structure_logs]
++    logs.append("Asset scan complete")
++    for category, items in assets.categories.items():
++        logs.append(f"Assets {category}: {len(items)} found")
++    logs.append("Git status read complete" if git.is_repository else "Git repository not detected")
++
++    _current_summary = ProjectSummary(
++        project_path=str(project_path),
++        exists=project_path.exists(),
++        checks=checks,
++        assets=assets,
++        git=git,
++        logs=logs,
++    )
++    return _current_summary
++
++
++@app.get("/api/assets/list", response_model=AssetScanResult)
++def list_assets() -> AssetScanResult:
++    """Return assets from the latest project scan."""
++
++    summary = _require_summary()
++    return summary.assets
++
++
++@app.get("/api/git/status", response_model=GitStatus)
++def git_status() -> GitStatus:
++    """Return Git status from the latest project scan."""
++
++    summary = _require_summary()
++    return summary.git
++
++
++@app.get("/api/project/summary", response_model=ProjectSummary)
++def project_summary() -> ProjectSummary:
++    """Return the latest complete scan summary."""
++
++    return _require_summary()
++
++
++@app.get("/api/dialogue/blocks", response_model=DialogueBlocksResponse)
++def dialogue_blocks() -> DialogueBlocksResponse:
++    """Return the current project's dialogue block document or an empty V0.7 document."""
++
++    project_path = _current_project_path_optional()
++    document = read_dialogue_document(project_path) if project_path is not None else default_dialogue_document()
++    return DialogueBlocksResponse(ok=True, document=document)
++
++
++@app.post("/api/dialogue/blocks/save", response_model=DialogueSaveResponse)
++def save_dialogue_blocks(request: DialogueDocumentRequest) -> DialogueSaveResponse:
++    """Save tools_data/dialogue_blocks.json for the latest scanned project."""
++
++    project_path = _require_current_project_path()
++    try:
++        path, block_count = save_dialogue_document(project_path, request.document)
++    except ValueError as exc:
++        raise HTTPException(status_code=400, detail=str(exc)) from exc
++    return DialogueSaveResponse(ok=True, path=str(path), block_count=block_count)
++
++
++@app.post("/api/dialogue/blocks/validate", response_model=DialogueValidationResponse)
++def validate_dialogue_blocks(
++    request: DialogueDocumentRequest | None = Body(default=None),
++) -> DialogueValidationResponse:
++    """Validate a supplied dialogue document, or the latest saved document if omitted."""
++
++    if request is not None:
++        document = request.document
++    else:
++        project_path = _current_project_path_optional()
++        document = read_dialogue_document(project_path) if project_path is not None else default_dialogue_document()
++    errors, warnings = validate_dialogue_document(document)
++    return DialogueValidationResponse(ok=len(errors) == 0, errors=errors, warnings=warnings)
++
++
++@app.post("/api/dialogue/export", response_model=DialogueExportResponse)
++def export_dialogue(
++    request: DialogueDocumentRequest | None = Body(default=None),
++) -> DialogueExportResponse:
++    """Export enabled dialogue blocks to game/generated_dialogue_blocks.rpy."""
++
++    project_path = _require_current_project_path()
++    document = request.document if request is not None else read_dialogue_document(project_path)
++    errors, _warnings = validate_dialogue_document(document)
++    if errors:
++        raise HTTPException(status_code=400, detail={"errors": errors})
++    try:
++        path, exported_count, skipped_count = export_dialogue_blocks(project_path, document)
++    except (FileNotFoundError, ValueError) as exc:
++        raise HTTPException(status_code=400, detail=str(exc)) from exc
++    return DialogueExportResponse(
++        ok=True,
++        path=str(path),
++        exported_count=exported_count,
++        skipped_count=skipped_count,
++    )
++
++
++def _require_summary() -> ProjectSummary:
++    if _current_summary is None:
++        raise HTTPException(status_code=404, detail="No project has been scanned yet")
++    return _current_summary
++
++
++def _current_project_path_optional() -> Path | None:
++    if _current_summary is None:
++        return None
++    return normalize_project_path(_current_summary.project_path)
++
++
++def _require_current_project_path() -> Path:
++    project_path = _current_project_path_optional()
++    if project_path is None:
++        raise HTTPException(status_code=404, detail="No project has been scanned yet")
++    return project_path
+diff --git a/backend/asset_scanner.py b/backend/asset_scanner.py
+new file mode 100644
+index 0000000..708ca6a
+--- /dev/null
++++ b/backend/asset_scanner.py
+@@ -0,0 +1,76 @@
++"""Read-only asset discovery for Ren'Py projects."""
++
++from __future__ import annotations
++
++from pathlib import Path
++from typing import Dict, Iterable, List, Set
++
++from .models import AssetItem, AssetScanResult
++
++IMAGE_EXTENSIONS: Set[str] = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif", ".svg"}
++AUDIO_EXTENSIONS: Set[str] = {".ogg", ".mp3", ".wav", ".flac", ".opus", ".m4a"}
++UI_HINTS = {"ui", "gui", "interface", "button", "buttons", "screen", "screens"}
++BACKGROUND_HINTS = {"background", "backgrounds", "bg", "bgs", "scene", "scenes"}
++CHARACTER_HINTS = {"character", "characters", "char", "chars", "sprite", "sprites", "portrait", "portraits"}
++AUDIO_HINTS = {"audio", "sound", "sounds", "sfx", "music", "voice", "voices", "bgm"}
++CATEGORIES = ("backgrounds", "characters", "ui", "audio")
++
++
++def scan_assets(project_path: Path) -> AssetScanResult:
++    """Discover assets under the project's game/ folder and group them by path hints."""
++
++    categories: Dict[str, List[AssetItem]] = {category: [] for category in CATEGORIES}
++    game_dir = project_path / "game"
++    if not game_dir.is_dir():
++        return AssetScanResult(categories=categories)
++
++    for file_path in sorted(_iter_asset_files(game_dir)):
++        category = _classify_asset(file_path, game_dir)
++        if category is None:
++            continue
++        try:
++            size_bytes = file_path.stat().st_size
++        except OSError:
++            size_bytes = 0
++        categories[category].append(
++            AssetItem(
++                name=file_path.name,
++                relative_path=file_path.relative_to(project_path).as_posix(),
++                size_bytes=size_bytes,
++                extension=file_path.suffix.lower(),
++            )
++        )
++
++    return AssetScanResult(categories=categories)
++
++
++def _iter_asset_files(root: Path) -> Iterable[Path]:
++    for path in root.rglob("*"):
++        if path.is_file() and not _is_hidden_path(path.relative_to(root)):
++            extension = path.suffix.lower()
++            if extension in IMAGE_EXTENSIONS or extension in AUDIO_EXTENSIONS:
++                yield path
++
++
++def _is_hidden_path(path: Path) -> bool:
++    return any(part.startswith(".") for part in path.parts)
++
++
++def _classify_asset(file_path: Path, game_dir: Path) -> str | None:
++    extension = file_path.suffix.lower()
++    relative_parts = [part.lower() for part in file_path.relative_to(game_dir).parts]
++    stem_tokens = set(file_path.stem.lower().replace("-", "_").split("_"))
++    path_tokens = set(relative_parts) | stem_tokens
++
++    if extension in AUDIO_EXTENSIONS:
++        return "audio"
++    if extension not in IMAGE_EXTENSIONS:
++        return None
++
++    if path_tokens & UI_HINTS:
++        return "ui"
++    if path_tokens & CHARACTER_HINTS:
++        return "characters"
++    if path_tokens & BACKGROUND_HINTS:
++        return "backgrounds"
++    return "ui" if "gui" in path_tokens else None
+diff --git a/backend/dialogue_manager.py b/backend/dialogue_manager.py
+new file mode 100644
+index 0000000..bf24826
+--- /dev/null
++++ b/backend/dialogue_manager.py
+@@ -0,0 +1,171 @@
++"""Read/write helpers for AVG Builder V0.7 dialogue block documents."""
++
++from __future__ import annotations
++
++import json
++import re
++from pathlib import Path
++from typing import Iterable, List, Tuple
++
++from .models import DialogueBlock, DialogueDocument, DialogueLine
++
++DIALOGUE_VERSION = "0.7"
++DIALOGUE_JSON_RELATIVE = Path("tools_data") / "dialogue_blocks.json"
++DIALOGUE_EXPORT_RELATIVE = Path("game") / "generated_dialogue_blocks.rpy"
++LABEL_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
++
++
++def default_dialogue_document(project_path: Path | None = None) -> DialogueDocument:
++    """Return an empty V0.7 dialogue document for the project."""
++
++    return DialogueDocument(
++        version=DIALOGUE_VERSION,
++        project_name=project_path.name if project_path is not None else "DemoAVG",
++        blocks=[],
++    )
++
++
++def read_dialogue_document(project_path: Path) -> DialogueDocument:
++    """Read tools_data/dialogue_blocks.json, returning an empty document if missing."""
++
++    document_path = dialogue_document_path(project_path)
++    if not document_path.is_file():
++        return default_dialogue_document(project_path)
++
++    try:
++        payload = json.loads(document_path.read_text(encoding="utf-8"))
++    except (OSError, json.JSONDecodeError):
++        return default_dialogue_document(project_path)
++
++    return DialogueDocument.model_validate(payload)
++
++
++def save_dialogue_document(project_path: Path, document: DialogueDocument) -> Tuple[Path, int]:
++    """Save a dialogue document under tools_data/ without touching Ren'Py core files."""
++
++    errors, _warnings = validate_dialogue_document(document)
++    if errors:
++        raise ValueError("; ".join(errors))
++
++    document = _with_project_defaults(project_path, document)
++    document_path = dialogue_document_path(project_path)
++    document_path.parent.mkdir(parents=True, exist_ok=True)
++    document_path.write_text(
++        json.dumps(document.model_dump(), ensure_ascii=False, indent=2) + "\n",
++        encoding="utf-8",
++    )
++    return document_path, len(document.blocks)
++
++
++def validate_dialogue_document(document: DialogueDocument) -> Tuple[List[str], List[str]]:
++    """Validate block-level requirements and return errors plus warnings."""
++
++    errors: List[str] = []
++    warnings: List[str] = []
++    labels: dict[str, str] = {}
++
++    for block_index, block in enumerate(document.blocks, start=1):
++        prefix = f"Block {block_index}"
++        if not block.id.strip():
++            errors.append(f"{prefix}: id is required")
++        if not block.label.strip():
++            errors.append(f"{prefix}: label is required")
++        elif not LABEL_PATTERN.fullmatch(block.label):
++            errors.append(f"{prefix}: label '{block.label}' is not a valid Ren'Py label name")
++        elif block.label in labels:
++            errors.append(f"{prefix}: duplicate label '{block.label}' also used by {labels[block.label]}")
++        else:
++            labels[block.label] = block.id or prefix
++
++        if not block.lines:
++            errors.append(f"{prefix}: at least one line is required")
++
++        for line_index, line in enumerate(block.lines, start=1):
++            if line.type not in {"narration", "dialogue", "comment"}:
++                errors.append(f"{prefix} line {line_index}: type must be narration, dialogue, or comment")
++            if line.text == "":
++                warnings.append(f"{prefix} line {line_index}: text is empty")
++
++    return errors, warnings
++
++
++def export_dialogue_blocks(project_path: Path, document: DialogueDocument) -> Tuple[Path, int, int]:
++    """Export enabled dialogue blocks to game/generated_dialogue_blocks.rpy."""
++
++    errors, _warnings = validate_dialogue_document(document)
++    if errors:
++        raise ValueError("; ".join(errors))
++
++    game_dir = project_path / "game"
++    if not game_dir.is_dir():
++        raise FileNotFoundError(f"Ren'Py game directory not found: {game_dir}")
++
++    document = _with_project_defaults(project_path, document)
++    enabled_blocks = [block for block in document.blocks if block.enabled]
++    skipped_count = len(document.blocks) - len(enabled_blocks)
++
++    export_path = dialogue_export_path(project_path)
++    export_path.write_text(_render_dialogue_file(enabled_blocks), encoding="utf-8")
++    return export_path, len(enabled_blocks), skipped_count
++
++
++def render_dialogue_preview(block: DialogueBlock) -> str:
++    """Render a single dialogue block to Ren'Py text for frontend/API previews."""
++
++    return _render_block(block).rstrip() + "\n"
++
++
++def dialogue_document_path(project_path: Path) -> Path:
++    return project_path / DIALOGUE_JSON_RELATIVE
++
++
++def dialogue_export_path(project_path: Path) -> Path:
++    return project_path / DIALOGUE_EXPORT_RELATIVE
++
++
++def _with_project_defaults(project_path: Path, document: DialogueDocument) -> DialogueDocument:
++    if not document.version:
++        document.version = DIALOGUE_VERSION
++    if not document.project_name:
++        document.project_name = project_path.name
++    return document
++
++
++def _render_dialogue_file(blocks: Iterable[DialogueBlock]) -> str:
++    parts = ["# This file is generated by AVGBuilder. Do not edit manually.", ""]
++    for block in blocks:
++        parts.append(_render_block(block).rstrip())
++        parts.append("")
++    return "\n".join(parts).rstrip() + "\n"
++
++
++def _render_block(block: DialogueBlock) -> str:
++    lines = [f"label {block.label}:", ""]
++    if block.background.strip():
++        lines.extend([f"    scene {block.background.strip()}", ""])
++    if block.music.strip():
++        lines.extend([f"    play music \"{_escape_renpy_string(block.music.strip())}\"", ""])
++
++    for line in block.lines:
++        rendered = _render_line(line)
++        if rendered:
++            lines.extend([rendered, ""])
++
++    if block.return_label.strip():
++        lines.append(f"    jump {block.return_label.strip()}")
++    else:
++        lines.append("    return")
++    return "\n".join(lines) + "\n"
++
++
++def _render_line(line: DialogueLine) -> str:
++    text = _escape_renpy_string(line.text)
++    if line.type == "comment":
++        return f"    # {line.text}" if line.text else "    #"
++    if line.type == "dialogue" and line.speaker.strip():
++        return f"    {line.speaker.strip()} \"{text}\""
++    return f"    \"{text}\""
++
++
++def _escape_renpy_string(value: str) -> str:
++    return value.replace("\\", "\\\\").replace('"', '\\"')
+diff --git a/backend/git_status.py b/backend/git_status.py
+new file mode 100644
+index 0000000..d3c652c
+--- /dev/null
++++ b/backend/git_status.py
+@@ -0,0 +1,56 @@
++"""Read-only Git status helper."""
++
++from __future__ import annotations
++
++import subprocess
++from pathlib import Path
++from typing import List, Optional
++
++from .models import GitStatus
++
++
++def read_git_status(project_path: Path) -> GitStatus:
++    """Read Git metadata without mutating the target repository."""
++
++    if not project_path.exists():
++        return GitStatus(is_repository=False, error="Project path does not exist")
++
++    is_repo = _run_git(project_path, ["rev-parse", "--is-inside-work-tree"])
++    if is_repo.returncode != 0 or is_repo.stdout.strip() != "true":
++        return GitStatus(is_repository=False, error=_clean_error(is_repo.stderr) or None)
++
++    branch_result = _run_git(project_path, ["branch", "--show-current"])
++    branch: Optional[str] = branch_result.stdout.strip() or None
++    if branch is None:
++        detached = _run_git(project_path, ["rev-parse", "--short", "HEAD"])
++        branch = f"HEAD detached at {detached.stdout.strip()}" if detached.returncode == 0 else None
++
++    short_result = _run_git(project_path, ["status", "--short"])
++    short_lines: List[str] = short_result.stdout.splitlines() if short_result.returncode == 0 else []
++
++    latest_result = _run_git(project_path, ["log", "-1", "--pretty=format:%h %s (%ci)"])
++    latest_commit = latest_result.stdout.strip() if latest_result.returncode == 0 else None
++
++    return GitStatus(
++        is_repository=True,
++        branch=branch,
++        clean=len(short_lines) == 0,
++        short_status=short_lines,
++        latest_commit=latest_commit,
++        error=None if short_result.returncode == 0 else _clean_error(short_result.stderr),
++    )
++
++
++def _run_git(cwd: Path, args: List[str]) -> subprocess.CompletedProcess[str]:
++    return subprocess.run(
++        ["git", *args],
++        cwd=str(cwd),
++        text=True,
++        capture_output=True,
++        timeout=5,
++        check=False,
++    )
++
++
++def _clean_error(stderr: str) -> str:
++    return stderr.strip().splitlines()[-1] if stderr.strip() else ""
+diff --git a/backend/models.py b/backend/models.py
+new file mode 100644
+index 0000000..270d16c
+--- /dev/null
++++ b/backend/models.py
+@@ -0,0 +1,134 @@
++"""Pydantic models for AVG Builder V0.1a."""
++
++from __future__ import annotations
++
++from pathlib import Path
++from typing import Dict, List, Optional
++
++from pydantic import BaseModel, Field
++
++
++class ProjectOpenRequest(BaseModel):
++    """Request body for opening/scanning a Ren'Py project."""
++
++    path: str = Field(..., description="Local path to the Ren'Py project root")
++
++
++class ProjectChecks(BaseModel):
++    """Presence checks for common Ren'Py project files."""
++
++    game_dir: bool
++    script_rpy: bool
++    gui_rpy: bool
++    options_rpy: bool
++    gitignore: bool
++
++
++class AssetItem(BaseModel):
++    """A single discovered asset."""
++
++    name: str
++    relative_path: str
++    size_bytes: int
++    extension: str
++
++
++class AssetScanResult(BaseModel):
++    """Discovered assets grouped by category."""
++
++    categories: Dict[str, List[AssetItem]]
++
++
++class GitStatus(BaseModel):
++    """Read-only Git status information for a project."""
++
++    is_repository: bool
++    branch: Optional[str] = None
++    clean: Optional[bool] = None
++    short_status: List[str] = Field(default_factory=list)
++    latest_commit: Optional[str] = None
++    error: Optional[str] = None
++
++
++class ProjectSummary(BaseModel):
++    """Complete scan result cached after opening a project."""
++
++    project_path: str
++    exists: bool
++    checks: ProjectChecks
++    assets: AssetScanResult
++    git: GitStatus
++    logs: List[str]
++
++
++def normalize_project_path(raw_path: str) -> Path:
++    """Expand a user supplied path without creating or modifying it."""
++
++    return Path(raw_path).expanduser().resolve(strict=False)
++
++
++class DialogueLine(BaseModel):
++    """A single V0.7 dialogue line."""
++
++    type: str = Field(default="narration", description="narration, dialogue, or comment")
++    speaker: str = ""
++    text: str = ""
++
++
++class DialogueBlock(BaseModel):
++    """Editable AVG dialogue block for generated Ren'Py labels."""
++
++    id: str
++    label: str
++    title: str = ""
++    background: str = ""
++    music: str = ""
++    lines: List[DialogueLine] = Field(default_factory=list)
++    return_label: str = ""
++    enabled: bool = True
++
++
++class DialogueDocument(BaseModel):
++    """Persisted dialogue_blocks.json document."""
++
++    version: str = "0.7"
++    project_name: str = "DemoAVG"
++    blocks: List[DialogueBlock] = Field(default_factory=list)
++
++
++class DialogueDocumentRequest(BaseModel):
++    """Request body containing a dialogue document."""
++
++    document: DialogueDocument
++
++
++class DialogueBlocksResponse(BaseModel):
++    """Response for loading dialogue blocks."""
++
++    ok: bool
++    document: DialogueDocument
++
++
++class DialogueSaveResponse(BaseModel):
++    """Response for saving dialogue_blocks.json."""
++
++    ok: bool
++    path: str
++    block_count: int
++
++
++class DialogueValidationResponse(BaseModel):
++    """Response for dialogue document validation."""
++
++    ok: bool
++    errors: List[str] = Field(default_factory=list)
++    warnings: List[str] = Field(default_factory=list)
++
++
++class DialogueExportResponse(BaseModel):
++    """Response for generated_dialogue_blocks.rpy export."""
++
++    ok: bool
++    path: str
++    exported_count: int
++    skipped_count: int
+diff --git a/backend/project_scanner.py b/backend/project_scanner.py
+new file mode 100644
+index 0000000..39dd75e
+--- /dev/null
++++ b/backend/project_scanner.py
+@@ -0,0 +1,38 @@
++"""Read-only Ren'Py project structure scanner."""
++
++from __future__ import annotations
++
++from pathlib import Path
++from typing import List, Tuple
++
++from .models import ProjectChecks
++
++
++def scan_project_structure(project_path: Path) -> Tuple[ProjectChecks, List[str]]:
++    """Check for expected Ren'Py project files without writing anything."""
++
++    logs: List[str] = []
++    exists = project_path.exists()
++    logs.append(f"Project path: {project_path}")
++    logs.append(f"Project path exists: {'yes' if exists else 'no'}")
++
++    game_dir = project_path / "game"
++    checks = ProjectChecks(
++        game_dir=game_dir.is_dir(),
++        script_rpy=(game_dir / "script.rpy").is_file(),
++        gui_rpy=(game_dir / "gui.rpy").is_file(),
++        options_rpy=(game_dir / "options.rpy").is_file(),
++        gitignore=(project_path / ".gitignore").is_file(),
++    )
++
++    check_messages = {
++        "game_dir": "game/ directory",
++        "script_rpy": "game/script.rpy",
++        "gui_rpy": "game/gui.rpy",
++        "options_rpy": "game/options.rpy",
++        "gitignore": ".gitignore",
++    }
++    for field, label in check_messages.items():
++        logs.append(f"Check {label}: {'found' if getattr(checks, field) else 'missing'}")
++
++    return checks, logs
+diff --git a/data/.gitkeep b/data/.gitkeep
+new file mode 100644
+index 0000000..e69de29
+diff --git a/frontend/app.js b/frontend/app.js
+new file mode 100644
+index 0000000..edcfa25
+--- /dev/null
++++ b/frontend/app.js
+@@ -0,0 +1,613 @@
++const form = document.querySelector('#scan-form');
++const pathInput = document.querySelector('#project-path');
++const scanButton = document.querySelector('#scan-button');
++const projectStatus = document.querySelector('#project-status');
++const gitStatus = document.querySelector('#git-status');
++const assetTabs = document.querySelector('#asset-tabs');
++const assetList = document.querySelector('#asset-list');
++const assetCount = document.querySelector('#asset-count');
++const scanLog = document.querySelector('#scan-log');
++
++const dialogueBlockList = document.querySelector('#dialogue-block-list');
++const dialogueBlockNew = document.querySelector('#dialogue-block-new');
++const dialogueBlockDuplicate = document.querySelector('#dialogue-block-duplicate');
++const dialogueBlockDelete = document.querySelector('#dialogue-block-delete');
++const dialogueBlockSave = document.querySelector('#dialogue-block-save');
++const dialogueBlockValidate = document.querySelector('#dialogue-block-validate');
++const dialogueBlockExport = document.querySelector('#dialogue-block-export');
++const dialogueBlockId = document.querySelector('#dialogue-block-id');
++const dialogueBlockLabel = document.querySelector('#dialogue-block-label');
++const dialogueBlockTitle = document.querySelector('#dialogue-block-title');
++const dialogueBlockBackground = document.querySelector('#dialogue-block-background');
++const dialogueBlockMusic = document.querySelector('#dialogue-block-music');
++const dialogueBlockReturnLabel = document.querySelector('#dialogue-block-return-label');
++const dialogueBlockEnabled = document.querySelector('#dialogue-block-enabled');
++const dialogueLineList = document.querySelector('#dialogue-line-list');
++const dialogueLineAddNarration = document.querySelector('#dialogue-line-add-narration');
++const dialogueLineAddDialogue = document.querySelector('#dialogue-line-add-dialogue');
++const dialogueLineAddComment = document.querySelector('#dialogue-line-add-comment');
++const dialogueRenpyPreview = document.querySelector('#dialogue-renpy-preview');
++const dialogueValidationResult = document.querySelector('#dialogue-validation-result');
++const dialogueExportResult = document.querySelector('#dialogue-export-result');
++
++let currentAssets = {};
++let activeCategory = 'backgrounds';
++let dialogueDocument = { version: '0.7', project_name: 'DemoAVG', blocks: [] };
++let selectedBlockIndex = -1;
++
++const categoryLabels = {
++  backgrounds: '背景',
++  characters: '角色',
++  ui: 'UI',
++  audio: '音频',
++};
++
++const lineTypeLabels = {
++  narration: 'narration',
++  dialogue: 'dialogue',
++  comment: 'comment',
++};
++
++form.addEventListener('submit', async (event) => {
++  event.preventDefault();
++  await scanProject(pathInput.value.trim());
++});
++
++dialogueBlockNew.addEventListener('click', () => createDialogueBlock());
++dialogueBlockDuplicate.addEventListener('click', () => duplicateDialogueBlock());
++dialogueBlockDelete.addEventListener('click', () => deleteDialogueBlock());
++dialogueBlockSave.addEventListener('click', () => saveDialogueBlocks());
++dialogueBlockValidate.addEventListener('click', () => validateDialogueBlocks(true));
++dialogueBlockExport.addEventListener('click', () => exportDialogueBlocks());
++dialogueLineAddNarration.addEventListener('click', () => addDialogueLine('narration'));
++dialogueLineAddDialogue.addEventListener('click', () => addDialogueLine('dialogue'));
++dialogueLineAddComment.addEventListener('click', () => addDialogueLine('comment'));
++[
++  dialogueBlockId,
++  dialogueBlockLabel,
++  dialogueBlockTitle,
++  dialogueBlockBackground,
++  dialogueBlockMusic,
++  dialogueBlockReturnLabel,
++].forEach((input) => input.addEventListener('input', syncSelectedBlockFromForm));
++dialogueBlockEnabled.addEventListener('change', syncSelectedBlockFromForm);
++
++loadDialogueBlocks();
++
++async function scanProject(projectPath) {
++  if (!projectPath) {
++    appendLog('请输入项目路径。');
++    return;
++  }
++
++  setLoading(true);
++  scanLog.textContent = '正在扫描...';
++
++  try {
++    const response = await fetch('/api/project/open', {
++      method: 'POST',
++      headers: { 'Content-Type': 'application/json' },
++      body: JSON.stringify({ path: projectPath }),
++    });
++
++    const payload = await response.json();
++    if (!response.ok) {
++      throw new Error(formatApiError(payload.detail) || '扫描失败');
++    }
++
++    renderSummary(payload);
++    await loadDialogueBlocks();
++  } catch (error) {
++    scanLog.textContent = `扫描失败：${error.message}`;
++  } finally {
++    setLoading(false);
++  }
++}
++
++function renderSummary(summary) {
++  renderProjectStatus(summary);
++  renderGitStatus(summary.git);
++  currentAssets = summary.assets?.categories || {};
++  activeCategory = Object.keys(currentAssets)[0] || 'backgrounds';
++  renderAssetTabs();
++  renderAssetList(activeCategory);
++  scanLog.textContent = (summary.logs || []).join('\n') || '扫描完成。';
++}
++
++function renderProjectStatus(summary) {
++  const checks = summary.checks || {};
++  projectStatus.classList.remove('empty');
++  projectStatus.innerHTML = [
++    statusRow('项目路径', escapeHtml(summary.project_path || '-')),
++    statusRow('路径存在', badge(summary.exists, '存在', '不存在')),
++    statusRow('game/', badge(checks.game_dir, '存在', '缺失')),
++    statusRow('game/script.rpy', badge(checks.script_rpy, '存在', '缺失')),
++    statusRow('game/gui.rpy', badge(checks.gui_rpy, '存在', '缺失')),
++    statusRow('game/options.rpy', badge(checks.options_rpy, '存在', '缺失')),
++    statusRow('.gitignore', badge(checks.gitignore, '存在', '缺失')),
++  ].join('');
++}
++
++function renderGitStatus(git) {
++  gitStatus.classList.remove('empty');
++  const shortStatus = git.short_status?.length
++    ? `<pre class="mini-log">${escapeHtml(git.short_status.join('\n'))}</pre>`
++    : '<span class="empty">无短状态输出</span>';
++
++  gitStatus.innerHTML = [
++    statusRow('Git 仓库', badge(git.is_repository, '是', '否')),
++    statusRow('当前分支', escapeHtml(git.branch || '-')),
++    statusRow('工作区', git.is_repository ? badge(git.clean, 'Clean', '有改动') : '-'),
++    statusRow('最新 commit', escapeHtml(git.latest_commit || '-')),
++    statusRow('status --short', shortStatus),
++    git.error ? statusRow('错误', `<span class="badge bad">${escapeHtml(git.error)}</span>`) : '',
++  ].join('');
++}
++
++function renderAssetTabs() {
++  const total = Object.values(currentAssets).reduce((sum, items) => sum + items.length, 0);
++  assetCount.textContent = `${total} 个资源`;
++  assetTabs.innerHTML = Object.keys(categoryLabels)
++    .map((category) => {
++      const count = currentAssets[category]?.length || 0;
++      const active = category === activeCategory ? ' active' : '';
++      return `<button class="asset-tab${active}" type="button" data-category="${category}">${categoryLabels[category]} (${count})</button>`;
++    })
++    .join('');
++
++  assetTabs.querySelectorAll('.asset-tab').forEach((tab) => {
++    tab.addEventListener('click', () => {
++      activeCategory = tab.dataset.category;
++      renderAssetTabs();
++      renderAssetList(activeCategory);
++    });
++  });
++}
++
++function renderAssetList(category) {
++  const items = currentAssets[category] || [];
++  assetList.classList.toggle('empty', items.length === 0);
++  if (items.length === 0) {
++    assetList.textContent = `未发现${categoryLabels[category] || category}资源。`;
++    return;
++  }
++
++  const rows = items
++    .map(
++      (item) => `<tr>
++        <td>${escapeHtml(item.name)}</td>
++        <td>${escapeHtml(item.relative_path)}</td>
++        <td>${escapeHtml(item.extension)}</td>
++        <td>${formatBytes(item.size_bytes)}</td>
++      </tr>`,
++    )
++    .join('');
++
++  assetList.innerHTML = `<table class="asset-table">
++    <thead>
++      <tr><th>名称</th><th>相对路径</th><th>类型</th><th>大小</th></tr>
++    </thead>
++    <tbody>${rows}</tbody>
++  </table>`;
++}
++
++async function loadDialogueBlocks() {
++  try {
++    const payload = await apiFetch('/api/dialogue/blocks');
++    dialogueDocument = normalizeDialogueDocument(payload.document);
++    selectedBlockIndex = dialogueDocument.blocks.length > 0 ? 0 : -1;
++    renderDialogueEditor();
++  } catch (error) {
++    dialogueValidationResult.textContent = `加载失败：${error.message}`;
++    dialogueValidationResult.className = 'dialogue-result bad';
++  }
++}
++
++function normalizeDialogueDocument(document) {
++  return {
++    version: document?.version || '0.7',
++    project_name: document?.project_name || 'DemoAVG',
++    blocks: (document?.blocks || []).map(normalizeDialogueBlock),
++  };
++}
++
++function normalizeDialogueBlock(block) {
++  return {
++    id: block?.id || nextBlockId(),
++    label: block?.label || nextBlockLabel(),
++    title: block?.title || '',
++    background: block?.background || '',
++    music: block?.music || '',
++    lines: (block?.lines || []).map(normalizeDialogueLine),
++    return_label: block?.return_label || '',
++    enabled: block?.enabled !== false,
++  };
++}
++
++function normalizeDialogueLine(line) {
++  return {
++    type: line?.type || 'narration',
++    speaker: line?.speaker || '',
++    text: line?.text || '',
++  };
++}
++
++function renderDialogueEditor() {
++  renderDialogueBlockList();
++  renderDialogueForm();
++  renderDialogueLines();
++  renderDialoguePreview();
++}
++
++function renderDialogueBlockList() {
++  dialogueBlockList.classList.toggle('empty', dialogueDocument.blocks.length === 0);
++  if (dialogueDocument.blocks.length === 0) {
++    dialogueBlockList.textContent = '暂无对话块，请点击“新建”。';
++    return;
++  }
++
++  dialogueBlockList.innerHTML = dialogueDocument.blocks
++    .map((block, index) => {
++      const active = index === selectedBlockIndex ? ' active' : '';
++      const disabled = block.enabled ? '' : ' disabled';
++      const title = block.title || block.label || block.id;
++      return `<button class="dialogue-block-item${active}${disabled}" type="button" data-index="${index}">
++        <strong>${escapeHtml(title)}</strong>
++        <span>${escapeHtml(block.label || '-')}</span>
++      </button>`;
++    })
++    .join('');
++
++  dialogueBlockList.querySelectorAll('.dialogue-block-item').forEach((button) => {
++    button.addEventListener('click', () => {
++      selectedBlockIndex = Number(button.dataset.index);
++      renderDialogueEditor();
++    });
++  });
++}
++
++function renderDialogueForm() {
++  const block = getSelectedBlock();
++  const disabled = !block;
++  [
++    dialogueBlockId,
++    dialogueBlockLabel,
++    dialogueBlockTitle,
++    dialogueBlockBackground,
++    dialogueBlockMusic,
++    dialogueBlockReturnLabel,
++    dialogueBlockEnabled,
++  ].forEach((input) => {
++    input.disabled = disabled;
++  });
++
++  dialogueBlockId.value = block?.id || '';
++  dialogueBlockLabel.value = block?.label || '';
++  dialogueBlockTitle.value = block?.title || '';
++  dialogueBlockBackground.value = block?.background || '';
++  dialogueBlockMusic.value = block?.music || '';
++  dialogueBlockReturnLabel.value = block?.return_label || '';
++  dialogueBlockEnabled.checked = block?.enabled !== false;
++}
++
++function renderDialogueLines() {
++  const block = getSelectedBlock();
++  dialogueLineList.classList.toggle('empty', !block || block.lines.length === 0);
++  if (!block) {
++    dialogueLineList.textContent = '请选择或新建一个对话块。';
++    return;
++  }
++  if (block.lines.length === 0) {
++    dialogueLineList.textContent = '暂无对白行，请添加 narration / dialogue / comment。';
++    return;
++  }
++
++  dialogueLineList.innerHTML = block.lines
++    .map(
++      (line, index) => `<div class="dialogue-line" data-index="${index}">
++        <select class="line-type" aria-label="line type">
++          ${Object.keys(lineTypeLabels)
++            .map((type) => `<option value="${type}"${type === line.type ? ' selected' : ''}>${lineTypeLabels[type]}</option>`)
++            .join('')}
++        </select>
++        <input class="line-speaker" type="text" placeholder="speaker" value="${escapeAttribute(line.speaker)}" />
++        <textarea class="line-text" rows="2" placeholder="对白文本或注释">${escapeHtml(line.text)}</textarea>
++        <div class="line-actions">
++          <button type="button" class="line-up secondary-button">↑</button>
++          <button type="button" class="line-down secondary-button">↓</button>
++          <button type="button" class="line-delete danger-button">删除</button>
++        </div>
++      </div>`,
++    )
++    .join('');
++
++  dialogueLineList.querySelectorAll('.dialogue-line').forEach((row) => {
++    const index = Number(row.dataset.index);
++    row.querySelector('.line-type').addEventListener('change', (event) => updateDialogueLine(index, 'type', event.target.value));
++    row.querySelector('.line-speaker').addEventListener('input', (event) => updateDialogueLine(index, 'speaker', event.target.value));
++    row.querySelector('.line-text').addEventListener('input', (event) => updateDialogueLine(index, 'text', event.target.value));
++    row.querySelector('.line-up').addEventListener('click', () => moveDialogueLine(index, -1));
++    row.querySelector('.line-down').addEventListener('click', () => moveDialogueLine(index, 1));
++    row.querySelector('.line-delete').addEventListener('click', () => deleteDialogueLine(index));
++  });
++}
++
++function renderDialoguePreview() {
++  const block = getSelectedBlock();
++  dialogueRenpyPreview.textContent = block ? renderRenpyBlock(block) : '请选择或新建一个对话块。';
++}
++
++function syncSelectedBlockFromForm() {
++  const block = getSelectedBlock();
++  if (!block) {
++    return;
++  }
++  block.id = dialogueBlockId.value.trim();
++  block.label = dialogueBlockLabel.value.trim();
++  block.title = dialogueBlockTitle.value;
++  block.background = dialogueBlockBackground.value.trim();
++  block.music = dialogueBlockMusic.value.trim();
++  block.return_label = dialogueBlockReturnLabel.value.trim();
++  block.enabled = dialogueBlockEnabled.checked;
++  renderDialogueBlockList();
++  renderDialoguePreview();
++}
++
++function createDialogueBlock() {
++  const block = {
++    id: nextBlockId(),
++    label: nextBlockLabel(),
++    title: '新对话块',
++    background: '',
++    music: '',
++    lines: [{ type: 'narration', speaker: '', text: '' }],
++    return_label: '',
++    enabled: true,
++  };
++  dialogueDocument.blocks.push(block);
++  selectedBlockIndex = dialogueDocument.blocks.length - 1;
++  dialogueValidationResult.textContent = '已新建对话块，记得保存。';
++  dialogueValidationResult.className = 'dialogue-result warn';
++  renderDialogueEditor();
++}
++
++function duplicateDialogueBlock() {
++  const block = getSelectedBlock();
++  if (!block) {
++    return;
++  }
++  const clone = JSON.parse(JSON.stringify(block));
++  clone.id = nextBlockId();
++  clone.label = nextBlockLabel();
++  clone.title = `${clone.title || clone.label} 副本`;
++  dialogueDocument.blocks.splice(selectedBlockIndex + 1, 0, clone);
++  selectedBlockIndex += 1;
++  renderDialogueEditor();
++}
++
++function deleteDialogueBlock() {
++  if (!getSelectedBlock()) {
++    return;
++  }
++  dialogueDocument.blocks.splice(selectedBlockIndex, 1);
++  selectedBlockIndex = Math.min(selectedBlockIndex, dialogueDocument.blocks.length - 1);
++  renderDialogueEditor();
++}
++
++function addDialogueLine(type) {
++  const block = getSelectedBlock();
++  if (!block) {
++    createDialogueBlock();
++    return;
++  }
++  block.lines.push({ type, speaker: type === 'dialogue' ? 'n' : '', text: '' });
++  renderDialogueLines();
++  renderDialoguePreview();
++}
++
++function updateDialogueLine(index, key, value) {
++  const block = getSelectedBlock();
++  if (!block || !block.lines[index]) {
++    return;
++  }
++  block.lines[index][key] = value;
++  renderDialoguePreview();
++}
++
++function moveDialogueLine(index, direction) {
++  const block = getSelectedBlock();
++  const target = index + direction;
++  if (!block || target < 0 || target >= block.lines.length) {
++    return;
++  }
++  const [line] = block.lines.splice(index, 1);
++  block.lines.splice(target, 0, line);
++  renderDialogueLines();
++  renderDialoguePreview();
++}
++
++function deleteDialogueLine(index) {
++  const block = getSelectedBlock();
++  if (!block) {
++    return;
++  }
++  block.lines.splice(index, 1);
++  renderDialogueLines();
++  renderDialoguePreview();
++}
++
++async function saveDialogueBlocks() {
++  try {
++    const payload = await apiFetch('/api/dialogue/blocks/save', {
++      method: 'POST',
++      body: JSON.stringify({ document: dialogueDocument }),
++    });
++    dialogueExportResult.textContent = `已保存：${payload.path}（${payload.block_count} 个 block）`;
++    dialogueExportResult.className = 'dialogue-result ok';
++  } catch (error) {
++    dialogueExportResult.textContent = `保存失败：${error.message}`;
++    dialogueExportResult.className = 'dialogue-result bad';
++  }
++}
++
++async function validateDialogueBlocks(showResult) {
++  const payload = await apiFetch('/api/dialogue/blocks/validate', {
++    method: 'POST',
++    body: JSON.stringify({ document: dialogueDocument }),
++  });
++  if (showResult) {
++    renderValidationResult(payload);
++  }
++  return payload;
++}
++
++async function exportDialogueBlocks() {
++  try {
++    const validation = await validateDialogueBlocks(true);
++    if (validation.errors?.length) {
++      dialogueExportResult.textContent = '存在 error，已取消导出。';
++      dialogueExportResult.className = 'dialogue-result bad';
++      return;
++    }
++    const payload = await apiFetch('/api/dialogue/export', {
++      method: 'POST',
++      body: JSON.stringify({ document: dialogueDocument }),
++    });
++    dialogueExportResult.textContent = `已导出：${payload.path}\n导出 ${payload.exported_count} 个，跳过 ${payload.skipped_count} 个。`;
++    dialogueExportResult.className = 'dialogue-result ok';
++  } catch (error) {
++    dialogueExportResult.textContent = `导出失败：${error.message}`;
++    dialogueExportResult.className = 'dialogue-result bad';
++  }
++}
++
++function renderValidationResult(payload) {
++  const errors = payload.errors || [];
++  const warnings = payload.warnings || [];
++  if (errors.length === 0 && warnings.length === 0) {
++    dialogueValidationResult.textContent = '校验通过，没有 error / warning。';
++    dialogueValidationResult.className = 'dialogue-result ok';
++    return;
++  }
++  dialogueValidationResult.innerHTML = [
++    ...errors.map((item) => `<div class="issue bad">ERROR: ${escapeHtml(item)}</div>`),
++    ...warnings.map((item) => `<div class="issue warn">WARN: ${escapeHtml(item)}</div>`),
++  ].join('');
++  dialogueValidationResult.className = `dialogue-result ${errors.length ? 'bad' : 'warn'}`;
++}
++
++function renderRenpyBlock(block) {
++  const lines = [`label ${block.label || 'dialogue_block_001'}:`, ''];
++  if (block.background) {
++    lines.push(`    scene ${block.background}`, '');
++  }
++  if (block.music) {
++    lines.push(`    play music "${escapeRenpyString(block.music)}"`, '');
++  }
++  block.lines.forEach((line) => {
++    if (line.type === 'comment') {
++      lines.push(`    # ${line.text || ''}`, '');
++    } else if (line.type === 'dialogue' && line.speaker.trim()) {
++      lines.push(`    ${line.speaker.trim()} "${escapeRenpyString(line.text)}"`, '');
++    } else {
++      lines.push(`    "${escapeRenpyString(line.text)}"`, '');
++    }
++  });
++  lines.push(block.return_label ? `    jump ${block.return_label}` : '    return');
++  return lines.join('\n');
++}
++
++function nextBlockId() {
++  return nextIndexedValue('block_', 'id');
++}
++
++function nextBlockLabel() {
++  return nextIndexedValue('dialogue_block_', 'label');
++}
++
++function nextIndexedValue(prefix, key) {
++  const used = new Set(dialogueDocument.blocks.map((block) => block[key]));
++  let index = 1;
++  let value = `${prefix}${String(index).padStart(3, '0')}`;
++  while (used.has(value)) {
++    index += 1;
++    value = `${prefix}${String(index).padStart(3, '0')}`;
++  }
++  return value;
++}
++
++function getSelectedBlock() {
++  return dialogueDocument.blocks[selectedBlockIndex] || null;
++}
++
++async function apiFetch(url, options = {}) {
++  const response = await fetch(url, {
++    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
++    ...options,
++  });
++  const payload = await response.json();
++  if (!response.ok) {
++    throw new Error(formatApiError(payload.detail) || '请求失败');
++  }
++  return payload;
++}
++
++function statusRow(label, value) {
++  return `<div class="status-row"><span>${label}</span><strong>${value}</strong></div>`;
++}
++
++function badge(value, okText, badText) {
++  const state = value ? 'ok' : 'bad';
++  return `<span class="badge ${state}">${value ? okText : badText}</span>`;
++}
++
++function appendLog(line) {
++  scanLog.textContent = `${scanLog.textContent}\n${line}`.trim();
++}
++
++function setLoading(isLoading) {
++  scanButton.disabled = isLoading;
++  scanButton.textContent = isLoading ? '扫描中...' : '扫描';
++}
++
++function formatBytes(bytes) {
++  if (!Number.isFinite(bytes) || bytes <= 0) {
++    return '0 B';
++  }
++  const units = ['B', 'KB', 'MB', 'GB'];
++  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
++  return `${(bytes / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
++}
++
++function formatApiError(detail) {
++  if (typeof detail === 'string') {
++    return detail;
++  }
++  if (Array.isArray(detail)) {
++    return detail.map(formatApiError).join('; ');
++  }
++  if (detail && typeof detail === 'object') {
++    if (Array.isArray(detail.errors)) {
++      return detail.errors.join('; ');
++    }
++    return JSON.stringify(detail);
++  }
++  return '';
++}
++
++function escapeRenpyString(value) {
++  return String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
++}
++
++function escapeAttribute(value) {
++  return escapeHtml(value).replace(/`/g, '&#096;');
++}
++
++function escapeHtml(value) {
++  return String(value)
++    .replace(/&/g, '&amp;')
++    .replace(/</g, '&lt;')
++    .replace(/>/g, '&gt;')
++    .replace(/"/g, '&quot;')
++    .replace(/'/g, '&#039;');
++}
+diff --git a/frontend/index.html b/frontend/index.html
+new file mode 100644
+index 0000000..2824106
+--- /dev/null
++++ b/frontend/index.html
+@@ -0,0 +1,142 @@
++<!doctype html>
++<html lang="zh-CN">
++  <head>
++    <meta charset="utf-8" />
++    <meta name="viewport" content="width=device-width, initial-scale=1" />
++    <title>AVG Builder V0.7</title>
++    <link rel="stylesheet" href="/static/style.css" />
++  </head>
++  <body>
++    <header class="hero">
++      <div>
++        <p class="eyebrow">AVG Builder V0.7</p>
++        <h1>本地 Ren'Py 项目扫描台</h1>
++        <p class="subtitle">只读扫描项目结构、资源列表与 Git 状态，并提供 Dialogue / 对话块编辑器。</p>
++      </div>
++    </header>
++
++    <main class="layout app-shell">
++      <section class="card scan-card">
++        <h2>打开项目</h2>
++        <form id="scan-form" class="scan-form">
++          <label for="project-path">项目路径</label>
++          <div class="input-row">
++            <input
++              id="project-path"
++              name="project-path"
++              type="text"
++              placeholder="例如 D:\GitHub\DemoAVG"
++              autocomplete="off"
++              required
++            />
++            <button id="scan-button" type="submit">扫描</button>
++          </div>
++          <p class="hint">请输入 Ren'Py 项目根目录。Dialogue 保存/导出只写入 tools_data/dialogue_blocks.json 与 game/generated_dialogue_blocks.rpy。</p>
++        </form>
++      </section>
++
++      <section class="grid two-columns">
++        <article class="card">
++          <h2>项目状态</h2>
++          <div id="project-status" class="status-list empty">尚未扫描项目。</div>
++        </article>
++
++        <article class="card">
++          <h2>Git 状态</h2>
++          <div id="git-status" class="status-list empty">尚未读取 Git 状态。</div>
++        </article>
++      </section>
++
++      <section class="card">
++        <div class="section-title">
++          <h2>资源分类</h2>
++          <span id="asset-count" class="pill">0 个资源</span>
++        </div>
++        <div id="asset-tabs" class="asset-tabs"></div>
++        <div id="asset-list" class="asset-list empty">尚未扫描资源。</div>
++      </section>
++
++      <section class="card dialogue-panel" id="dialogue-page">
++        <div class="section-title">
++          <div>
++            <p class="eyebrow dark">Dialogue Block Editor V0.7</p>
++            <h2>对话块编辑器</h2>
++          </div>
++          <span class="pill">生成 generated_dialogue_blocks.rpy</span>
++        </div>
++
++        <div class="dialogue-actions top-actions">
++          <button id="dialogue-block-save" type="button">保存 JSON</button>
++          <button id="dialogue-block-validate" type="button" class="secondary-button">校验</button>
++          <button id="dialogue-block-export" type="button" class="secondary-button">导出 RPY</button>
++        </div>
++
++        <div class="dialogue-layout">
++          <aside class="dialogue-sidebar">
++            <div class="dialogue-toolbar">
++              <button id="dialogue-block-new" type="button">新建</button>
++              <button id="dialogue-block-duplicate" type="button" class="secondary-button">复制</button>
++              <button id="dialogue-block-delete" type="button" class="danger-button">删除</button>
++            </div>
++            <div id="dialogue-block-list" class="dialogue-block-list empty">尚未加载对话块。</div>
++          </aside>
++
++          <section class="dialogue-editor">
++            <div class="dialogue-form grid two-columns">
++              <label>ID
++                <input id="dialogue-block-id" type="text" placeholder="block_001" />
++              </label>
++              <label>Ren'Py Label
++                <input id="dialogue-block-label" type="text" placeholder="dialogue_block_001" />
++              </label>
++              <label>标题
++                <input id="dialogue-block-title" type="text" placeholder="雨夜房间测试对白" />
++              </label>
++              <label>背景名
++                <input id="dialogue-block-background" type="text" placeholder="bg_room_rainy" />
++              </label>
++              <label>音乐路径/名称
++                <input id="dialogue-block-music" type="text" placeholder="可空，例如 audio/bgm_rain.ogg" />
++              </label>
++              <label>返回 Label
++                <input id="dialogue-block-return-label" type="text" placeholder="可空；填写后导出 jump" />
++              </label>
++              <label class="checkbox-label">
++                <input id="dialogue-block-enabled" type="checkbox" checked />
++                启用导出
++              </label>
++            </div>
++
++            <div class="section-title compact-title">
++              <h3>对白行</h3>
++              <div class="dialogue-actions">
++                <button id="dialogue-line-add-narration" type="button" class="secondary-button">添加 narration</button>
++                <button id="dialogue-line-add-dialogue" type="button" class="secondary-button">添加 dialogue</button>
++                <button id="dialogue-line-add-comment" type="button" class="secondary-button">添加 comment</button>
++              </div>
++            </div>
++            <div id="dialogue-line-list" class="dialogue-line-list empty">请选择或新建一个对话块。</div>
++          </section>
++
++          <aside class="dialogue-preview-panel">
++            <h3>Ren'Py 预览</h3>
++            <pre id="dialogue-renpy-preview" class="renpy-preview">请选择或新建一个对话块。</pre>
++
++            <h3>校验结果</h3>
++            <div id="dialogue-validation-result" class="dialogue-result empty">尚未校验。</div>
++
++            <h3>导出结果</h3>
++            <div id="dialogue-export-result" class="dialogue-result empty">尚未导出。</div>
++          </aside>
++        </div>
++      </section>
++
++      <section class="card">
++        <h2>扫描日志</h2>
++        <pre id="scan-log" class="scan-log">等待扫描...</pre>
++      </section>
++    </main>
++
++    <script src="/static/app.js"></script>
++  </body>
++</html>
+diff --git a/frontend/style.css b/frontend/style.css
+new file mode 100644
+index 0000000..5261368
+--- /dev/null
++++ b/frontend/style.css
+@@ -0,0 +1,518 @@
++:root {
++  color-scheme: light;
++  --bg: #f5f7fb;
++  --card: #ffffff;
++  --text: #172033;
++  --muted: #667085;
++  --line: #d9e1ec;
++  --accent: #6554e8;
++  --accent-dark: #4d3fc1;
++  --ok: #168a45;
++  --warn: #b46a00;
++  --bad: #c03434;
++  --shadow: 0 18px 50px rgba(23, 32, 51, 0.08);
++}
++
++* {
++  box-sizing: border-box;
++}
++
++body {
++  margin: 0;
++  min-height: 100vh;
++  background: radial-gradient(circle at top left, #eef0ff, transparent 34rem), var(--bg);
++  color: var(--text);
++  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
++}
++
++.hero {
++  padding: 48px 24px 28px;
++  color: white;
++  background: linear-gradient(135deg, #2b245f, #6554e8 65%, #9878ff);
++}
++
++.hero > div,
++.layout {
++  width: min(1120px, 100%);
++  margin: 0 auto;
++}
++
++.eyebrow {
++  margin: 0 0 10px;
++  font-size: 0.78rem;
++  font-weight: 800;
++  letter-spacing: 0.16em;
++  text-transform: uppercase;
++  opacity: 0.82;
++}
++
++h1,
++h2,
++p {
++  margin-top: 0;
++}
++
++h1 {
++  margin-bottom: 12px;
++  font-size: clamp(2rem, 5vw, 3.8rem);
++  line-height: 1;
++}
++
++h2 {
++  margin-bottom: 18px;
++  font-size: 1.15rem;
++}
++
++.subtitle {
++  max-width: 720px;
++  margin-bottom: 0;
++  color: rgba(255, 255, 255, 0.82);
++  font-size: 1.05rem;
++}
++
++.layout {
++  padding: 28px 24px 60px;
++}
++
++.card {
++  margin-bottom: 22px;
++  padding: 24px;
++  border: 1px solid rgba(217, 225, 236, 0.9);
++  border-radius: 22px;
++  background: rgba(255, 255, 255, 0.94);
++  box-shadow: var(--shadow);
++}
++
++.grid {
++  display: grid;
++  gap: 22px;
++}
++
++.two-columns {
++  grid-template-columns: repeat(2, minmax(0, 1fr));
++}
++
++.scan-form label {
++  display: block;
++  margin-bottom: 8px;
++  color: var(--muted);
++  font-weight: 700;
++}
++
++.input-row {
++  display: flex;
++  gap: 12px;
++}
++
++input {
++  flex: 1;
++  min-width: 0;
++  padding: 13px 15px;
++  border: 1px solid var(--line);
++  border-radius: 14px;
++  color: var(--text);
++  font-size: 1rem;
++}
++
++input:focus {
++  border-color: var(--accent);
++  outline: 3px solid rgba(101, 84, 232, 0.16);
++}
++
++button {
++  border: 0;
++  border-radius: 14px;
++  padding: 0 24px;
++  background: var(--accent);
++  color: white;
++  cursor: pointer;
++  font-weight: 800;
++}
++
++button:hover:not(:disabled) {
++  background: var(--accent-dark);
++}
++
++button:disabled {
++  cursor: wait;
++  opacity: 0.65;
++}
++
++.hint {
++  margin: 10px 0 0;
++  color: var(--muted);
++  font-size: 0.92rem;
++}
++
++.status-list {
++  display: grid;
++  gap: 10px;
++}
++
++.status-row {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  gap: 16px;
++  padding-bottom: 10px;
++  border-bottom: 1px solid var(--line);
++}
++
++.status-row:last-child {
++  border-bottom: 0;
++  padding-bottom: 0;
++}
++
++.status-row span:first-child {
++  color: var(--muted);
++}
++
++.badge,
++.pill {
++  display: inline-flex;
++  align-items: center;
++  min-height: 28px;
++  border-radius: 999px;
++  padding: 4px 10px;
++  background: #edf0f7;
++  color: var(--muted);
++  font-size: 0.84rem;
++  font-weight: 800;
++}
++
++.badge.ok {
++  background: #e8f7ee;
++  color: var(--ok);
++}
++
++.badge.warn {
++  background: #fff3df;
++  color: var(--warn);
++}
++
++.badge.bad {
++  background: #ffebeb;
++  color: var(--bad);
++}
++
++.section-title {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  gap: 16px;
++}
++
++.asset-tabs {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 10px;
++  margin-bottom: 16px;
++}
++
++.asset-tab {
++  border: 1px solid var(--line);
++  border-radius: 999px;
++  padding: 8px 12px;
++  background: #f9fbff;
++  color: var(--text);
++  cursor: pointer;
++  font-weight: 800;
++}
++
++.asset-tab.active {
++  border-color: transparent;
++  background: var(--accent);
++  color: white;
++}
++
++.asset-list {
++  overflow: auto;
++}
++
++.asset-table {
++  width: 100%;
++  border-collapse: collapse;
++  font-size: 0.94rem;
++}
++
++.asset-table th,
++.asset-table td {
++  padding: 12px 10px;
++  border-bottom: 1px solid var(--line);
++  text-align: left;
++  vertical-align: top;
++}
++
++.asset-table th {
++  color: var(--muted);
++  font-size: 0.82rem;
++  text-transform: uppercase;
++}
++
++.scan-log {
++  min-height: 180px;
++  margin: 0;
++  padding: 16px;
++  overflow: auto;
++  border-radius: 14px;
++  background: #101828;
++  color: #d6e2ff;
++  font-size: 0.9rem;
++  line-height: 1.6;
++}
++
++.empty {
++  color: var(--muted);
++}
++
++@media (max-width: 760px) {
++  .two-columns {
++    grid-template-columns: 1fr;
++  }
++
++  .input-row {
++    flex-direction: column;
++  }
++
++  button {
++    min-height: 46px;
++  }
++}
++
++.mini-log {
++  max-width: 100%;
++  margin: 0;
++  white-space: pre-wrap;
++  color: var(--text);
++  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
++  font-size: 0.82rem;
++}
++
++/* Dialogue Block Editor V0.7 */
++.app-shell {
++  max-width: 1280px;
++}
++
++.eyebrow.dark {
++  color: var(--accent);
++  opacity: 1;
++}
++
++.dialogue-panel h3 {
++  margin: 0 0 12px;
++  font-size: 1rem;
++}
++
++.dialogue-layout {
++  display: grid;
++  grid-template-columns: 260px minmax(0, 1fr) 360px;
++  gap: 18px;
++  align-items: start;
++}
++
++.dialogue-sidebar,
++.dialogue-editor,
++.dialogue-preview-panel {
++  min-width: 0;
++  padding: 16px;
++  border: 1px solid var(--line);
++  border-radius: 18px;
++  background: #fbfcff;
++}
++
++.dialogue-toolbar,
++.dialogue-actions {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 8px;
++}
++
++.top-actions {
++  margin: -4px 0 16px;
++}
++
++.secondary-button {
++  border: 1px solid var(--line);
++  background: #f6f8ff;
++  color: var(--text);
++}
++
++.secondary-button:hover:not(:disabled) {
++  background: #eef2ff;
++}
++
++.danger-button {
++  background: var(--bad);
++}
++
++.danger-button:hover:not(:disabled) {
++  background: #9d2828;
++}
++
++.dialogue-block-list {
++  display: grid;
++  gap: 10px;
++  margin-top: 14px;
++}
++
++.dialogue-block-item {
++  display: grid;
++  gap: 5px;
++  width: 100%;
++  padding: 12px;
++  border: 1px solid var(--line);
++  border-radius: 14px;
++  background: white;
++  color: var(--text);
++  text-align: left;
++}
++
++.dialogue-block-item:hover,
++.dialogue-block-item.active {
++  border-color: var(--accent);
++  background: #f4f2ff;
++}
++
++.dialogue-block-item.disabled {
++  opacity: 0.62;
++}
++
++.dialogue-block-item span {
++  color: var(--muted);
++  font-size: 0.82rem;
++}
++
++.dialogue-form label {
++  display: grid;
++  gap: 7px;
++  color: var(--muted);
++  font-weight: 800;
++}
++
++.dialogue-form input,
++.dialogue-line input,
++.dialogue-line select,
++.dialogue-line textarea {
++  width: 100%;
++  border: 1px solid var(--line);
++  border-radius: 12px;
++  padding: 10px 12px;
++  color: var(--text);
++  font: inherit;
++}
++
++.checkbox-label {
++  display: flex !important;
++  grid-column: 1 / -1;
++  grid-template-columns: auto 1fr;
++  align-items: center;
++  gap: 10px !important;
++}
++
++.checkbox-label input {
++  width: auto;
++}
++
++.compact-title {
++  margin: 18px 0 10px;
++}
++
++.compact-title h3 {
++  margin: 0;
++}
++
++.dialogue-line-list {
++  display: grid;
++  gap: 12px;
++}
++
++.dialogue-line {
++  display: grid;
++  grid-template-columns: 135px 120px minmax(0, 1fr) auto;
++  gap: 10px;
++  align-items: start;
++  padding: 12px;
++  border: 1px solid var(--line);
++  border-radius: 16px;
++  background: white;
++}
++
++.dialogue-line textarea {
++  resize: vertical;
++}
++
++.line-actions {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 6px;
++}
++
++.line-actions button,
++.dialogue-actions button,
++.dialogue-toolbar button {
++  min-height: 38px;
++  padding: 0 12px;
++}
++
++.renpy-preview {
++  min-height: 260px;
++  margin: 0 0 18px;
++  padding: 16px;
++  overflow: auto;
++  border-radius: 14px;
++  background: #101828;
++  color: #d6e2ff;
++  line-height: 1.6;
++  white-space: pre-wrap;
++}
++
++.dialogue-result {
++  margin-bottom: 18px;
++  padding: 12px;
++  border: 1px solid var(--line);
++  border-radius: 14px;
++  background: white;
++  color: var(--muted);
++  white-space: pre-wrap;
++}
++
++.dialogue-result.ok,
++.issue.ok {
++  border-color: #b7e8c8;
++  background: #e8f7ee;
++  color: var(--ok);
++}
++
++.dialogue-result.warn,
++.issue.warn {
++  border-color: #ffd99b;
++  background: #fff3df;
++  color: var(--warn);
++}
++
++.dialogue-result.bad,
++.issue.bad {
++  border-color: #ffc3c3;
++  background: #ffebeb;
++  color: var(--bad);
++}
++
++.issue {
++  margin-bottom: 8px;
++  padding: 8px 10px;
++  border-radius: 10px;
++}
++
++.issue:last-child {
++  margin-bottom: 0;
++}
++
++@media (max-width: 1120px) {
++  .dialogue-layout {
++    grid-template-columns: 1fr;
++  }
++
++  .dialogue-line {
++    grid-template-columns: 1fr;
++  }
++}
+diff --git a/requirements.txt b/requirements.txt
+new file mode 100644
+index 0000000..0fb8d83
+--- /dev/null
++++ b/requirements.txt
+@@ -0,0 +1,3 @@
++fastapi==0.115.6
++uvicorn[standard]==0.34.0
++pydantic==2.10.4
+diff --git a/scripts/check_all.ps1 b/scripts/check_all.ps1
+new file mode 100755
+index 0000000..f24729b
+--- /dev/null
++++ b/scripts/check_all.ps1
+@@ -0,0 +1,44 @@
++<#
++.SYNOPSIS
++Runs local AVGBuilder backend/frontend checks.
++
++.DESCRIPTION
++Checks Python backend compilation and frontend JavaScript syntax. This script
++only touches AVGBuilder and does not modify DemoAVG.
++#>
++[CmdletBinding()]
++param(
++    [switch]$UseVenv
++)
++
++Set-StrictMode -Version Latest
++$ErrorActionPreference = "Stop"
++
++$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
++$RepoRoot = Split-Path -Parent $ScriptDir
++Set-Location $RepoRoot
++
++function Invoke-Step {
++    param(
++        [Parameter(Mandatory = $true)][string]$Name,
++        [Parameter(Mandatory = $true)][scriptblock]$Command
++    )
++    Write-Host "`n==> $Name" -ForegroundColor Cyan
++    & $Command
++    if ($LASTEXITCODE -ne 0) {
++        throw "$Name failed with exit code $LASTEXITCODE"
++    }
++    Write-Host "PASS: $Name" -ForegroundColor Green
++}
++
++$Python = "python"
++$VenvPython = Join-Path $RepoRoot ".venv\Scripts\python.exe"
++if ($UseVenv -and (Test-Path $VenvPython)) {
++    $Python = $VenvPython
++}
++
++Invoke-Step "Python backend compile" { & $Python -m compileall backend }
++Invoke-Step "Frontend JavaScript syntax" { node --check frontend/app.js }
++Invoke-Step "Git whitespace check" { git diff --check }
++
++Write-Host "`nAll AVGBuilder checks passed." -ForegroundColor Green
+diff --git a/scripts/push_safe.ps1 b/scripts/push_safe.ps1
+new file mode 100755
+index 0000000..44abe2b
+--- /dev/null
++++ b/scripts/push_safe.ps1
+@@ -0,0 +1,48 @@
++<#
++.SYNOPSIS
++Safely pushes the current AVGBuilder branch after checks.
++
++.DESCRIPTION
++This script only pushes AVGBuilder. It refuses to push main/master unless
++-AllowMain is provided, runs local checks first by default, and never modifies
++DemoAVG.
++#>
++[CmdletBinding()]
++param(
++    [string]$Remote = "origin",
++    [string]$Branch,
++    [switch]$AllowMain,
++    [switch]$SkipChecks
++)
++
++Set-StrictMode -Version Latest
++$ErrorActionPreference = "Stop"
++
++$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
++$RepoRoot = Split-Path -Parent $ScriptDir
++Set-Location $RepoRoot
++
++if (-not $Branch) {
++    $Branch = (git branch --show-current).Trim()
++}
++if (-not $Branch) {
++    throw "Could not determine current branch."
++}
++
++if ((($Branch -eq "main") -or ($Branch -eq "master")) -and (-not $AllowMain)) {
++    throw "Refusing to push '$Branch'. Create a feature branch or rerun with -AllowMain."
++}
++
++$Pending = git status --short
++if ($Pending) {
++    Write-Host "Uncommitted changes detected:" -ForegroundColor Yellow
++    $Pending
++    throw "Commit or stash changes before pushing."
++}
++
++if (-not $SkipChecks) {
++    & (Join-Path $RepoRoot "scripts\check_all.ps1")
++}
++
++Write-Host "Pushing $Branch to $Remote/$Branch" -ForegroundColor Green
++git push -u $Remote $Branch
+diff --git a/scripts/start_dev.ps1 b/scripts/start_dev.ps1
+new file mode 100755
+index 0000000..acf889c
+--- /dev/null
++++ b/scripts/start_dev.ps1
+@@ -0,0 +1,45 @@
++<#
++.SYNOPSIS
++Starts AVGBuilder's local FastAPI development server.
++
++.DESCRIPTION
++This script only operates inside the AVGBuilder repository. It does not read,
++write, or modify DemoAVG. It creates/uses the local AVGBuilder virtual
++environment, installs AVGBuilder requirements, and starts uvicorn on 127.0.0.1.
++#>
++[CmdletBinding()]
++param(
++    [string]$HostAddress = "127.0.0.1",
++    [int]$Port = 8000,
++    [switch]$NoReload,
++    [switch]$SkipInstall
++)
++
++Set-StrictMode -Version Latest
++$ErrorActionPreference = "Stop"
++
++$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
++$RepoRoot = Split-Path -Parent $ScriptDir
++Set-Location $RepoRoot
++
++Write-Host "AVGBuilder dev server" -ForegroundColor Cyan
++Write-Host "Repository: $RepoRoot"
++
++$VenvPython = Join-Path $RepoRoot ".venv\Scripts\python.exe"
++if (-not (Test-Path $VenvPython)) {
++    Write-Host "Creating local virtual environment: .venv" -ForegroundColor Yellow
++    python -m venv .venv
++}
++
++if (-not $SkipInstall) {
++    Write-Host "Installing AVGBuilder requirements..." -ForegroundColor Yellow
++    & $VenvPython -m pip install -r requirements.txt
++}
++
++$ReloadArgs = @()
++if (-not $NoReload) {
++    $ReloadArgs += "--reload"
++}
++
++Write-Host "Starting http://$HostAddress`:$Port" -ForegroundColor Green
++& $VenvPython -m uvicorn backend.app:app --host $HostAddress --port $Port @ReloadArgs
+diff --git a/scripts/status_all.ps1 b/scripts/status_all.ps1
+new file mode 100755
+index 0000000..f53080a
+--- /dev/null
++++ b/scripts/status_all.ps1
+@@ -0,0 +1,52 @@
++<#
++.SYNOPSIS
++Shows Git status for AVGBuilder and DemoAVG without modifying either repo.
++
++.DESCRIPTION
++The script defaults DemoAVG to a sibling folder next to AVGBuilder. Override
++-DemoAVGPath if your checkout is elsewhere. All Git commands are read-only.
++#>
++[CmdletBinding()]
++param(
++    [string]$DemoAVGPath
++)
++
++Set-StrictMode -Version Latest
++$ErrorActionPreference = "Stop"
++
++$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
++$AVGBuilderPath = Split-Path -Parent $ScriptDir
++if (-not $DemoAVGPath) {
++    $DemoAVGPath = Join-Path (Split-Path -Parent $AVGBuilderPath) "DemoAVG"
++}
++
++function Show-RepoStatus {
++    param(
++        [Parameter(Mandatory = $true)][string]$Name,
++        [Parameter(Mandatory = $true)][string]$Path
++    )
++
++    Write-Host "`n== $Name ==" -ForegroundColor Cyan
++    Write-Host "Path: $Path"
++    if (-not (Test-Path $Path)) {
++        Write-Host "Missing path" -ForegroundColor Yellow
++        return
++    }
++    if (-not (Test-Path (Join-Path $Path ".git"))) {
++        Write-Host "Not a Git repository" -ForegroundColor Yellow
++        return
++    }
++
++    git -C $Path branch --show-current
++    git -C $Path log -1 --oneline
++    $Status = git -C $Path status --short
++    if ($Status) {
++        Write-Host "Working tree changes:" -ForegroundColor Yellow
++        $Status
++    } else {
++        Write-Host "Working tree clean" -ForegroundColor Green
++    }
++}
++
++Show-RepoStatus "AVGBuilder" $AVGBuilderPath
++Show-RepoStatus "DemoAVG (read-only status check)" $DemoAVGPath
+-- 
+2.43.0
+

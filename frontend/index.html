@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AVG Builder V0.7</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <p class="eyebrow">AVG Builder V0.7</p>
+        <h1>本地 Ren'Py 项目扫描台</h1>
+        <p class="subtitle">只读扫描项目结构、资源列表与 Git 状态，并提供 Dialogue / 对话块编辑器。</p>
+      </div>
+    </header>
+
+    <main class="layout app-shell">
+      <section class="card scan-card">
+        <h2>打开项目</h2>
+        <form id="scan-form" class="scan-form">
+          <label for="project-path">项目路径</label>
+          <div class="input-row">
+            <input
+              id="project-path"
+              name="project-path"
+              type="text"
+              placeholder="例如 D:\GitHub\DemoAVG"
+              autocomplete="off"
+              required
+            />
+            <button id="scan-button" type="submit">扫描</button>
+          </div>
+          <p class="hint">请输入 Ren'Py 项目根目录。Dialogue 保存/导出只写入 tools_data/dialogue_blocks.json 与 game/generated_dialogue_blocks.rpy。</p>
+        </form>
+      </section>
+
+      <section class="grid two-columns">
+        <article class="card">
+          <h2>项目状态</h2>
+          <div id="project-status" class="status-list empty">尚未扫描项目。</div>
+        </article>
+
+        <article class="card">
+          <h2>Git 状态</h2>
+          <div id="git-status" class="status-list empty">尚未读取 Git 状态。</div>
+        </article>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>资源分类</h2>
+          <span id="asset-count" class="pill">0 个资源</span>
+        </div>
+        <div id="asset-tabs" class="asset-tabs"></div>
+        <div id="asset-list" class="asset-list empty">尚未扫描资源。</div>
+      </section>
+
+      <section class="card dialogue-panel" id="dialogue-page">
+        <div class="section-title">
+          <div>
+            <p class="eyebrow dark">Dialogue Block Editor V0.7</p>
+            <h2>对话块编辑器</h2>
+          </div>
+          <span class="pill">生成 generated_dialogue_blocks.rpy</span>
+        </div>
+
+        <div class="dialogue-actions top-actions">
+          <button id="dialogue-block-save" type="button">保存 JSON</button>
+          <button id="dialogue-block-validate" type="button" class="secondary-button">校验</button>
+          <button id="dialogue-block-export" type="button" class="secondary-button">导出 RPY</button>
+        </div>
+
+        <div class="dialogue-layout">
+          <aside class="dialogue-sidebar">
+            <div class="dialogue-toolbar">
+              <button id="dialogue-block-new" type="button">新建</button>
+              <button id="dialogue-block-duplicate" type="button" class="secondary-button">复制</button>
+              <button id="dialogue-block-delete" type="button" class="danger-button">删除</button>
+            </div>
+            <div id="dialogue-block-list" class="dialogue-block-list empty">尚未加载对话块。</div>
+          </aside>
+
+          <section class="dialogue-editor">
+            <div class="dialogue-form grid two-columns">
+              <label>ID
+                <input id="dialogue-block-id" type="text" placeholder="block_001" />
+              </label>
+              <label>Ren'Py Label
+                <input id="dialogue-block-label" type="text" placeholder="dialogue_block_001" />
+              </label>
+              <label>标题
+                <input id="dialogue-block-title" type="text" placeholder="雨夜房间测试对白" />
+              </label>
+              <label>背景名
+                <input id="dialogue-block-background" type="text" placeholder="bg_room_rainy" />
+              </label>
+              <label>音乐路径/名称
+                <input id="dialogue-block-music" type="text" placeholder="可空，例如 audio/bgm_rain.ogg" />
+              </label>
+              <label>返回 Label
+                <input id="dialogue-block-return-label" type="text" placeholder="可空；填写后导出 jump" />
+              </label>
+              <label class="checkbox-label">
+                <input id="dialogue-block-enabled" type="checkbox" checked />
+                启用导出
+              </label>
+            </div>
+
+            <div class="section-title compact-title">
+              <h3>对白行</h3>
+              <div class="dialogue-actions">
+                <button id="dialogue-line-add-narration" type="button" class="secondary-button">添加 narration</button>
+                <button id="dialogue-line-add-dialogue" type="button" class="secondary-button">添加 dialogue</button>
+                <button id="dialogue-line-add-comment" type="button" class="secondary-button">添加 comment</button>
+              </div>
+            </div>
+            <div id="dialogue-line-list" class="dialogue-line-list empty">请选择或新建一个对话块。</div>
+          </section>
+
+          <aside class="dialogue-preview-panel">
+            <h3>Ren'Py 预览</h3>
+            <pre id="dialogue-renpy-preview" class="renpy-preview">请选择或新建一个对话块。</pre>
+
+            <h3>校验结果</h3>
+            <div id="dialogue-validation-result" class="dialogue-result empty">尚未校验。</div>
+
+            <h3>导出结果</h3>
+            <div id="dialogue-export-result" class="dialogue-result empty">尚未导出。</div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>扫描日志</h2>
+        <pre id="scan-log" class="scan-log">等待扫描...</pre>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
